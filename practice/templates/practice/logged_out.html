@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Logged Out</h2>
+                </div>
+                <div class="card-body text-center">
+                    <p class="lead">You have been successfully logged out.</p>
+                    <p>Thank you for using Sino AI IELTS Tutor!</p>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'login' %}" class="btn btn-primary me-2">Log In Again</a>
+                        <a href="{% url 'homepage' %}" class="btn btn-secondary">Return to Homepage</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

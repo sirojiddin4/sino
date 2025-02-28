@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Support</h2>
+                </div>
+                <div class="card-body">
+                    <h4>Need Help?</h4>
+                    <p>We're here to assist you with any questions or issues you may encounter while using the Sino AI IELTS Tutor.</p>
+                    
+                    <h5 class="mt-4">Frequently Asked Questions</h5>
+                    <div class="accordion mt-3" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faqOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    How do I change my coach?
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="faqOne" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    You can change your coach by clicking on the coach image on the homepage. This will open a modal window where you can select from various available coaches.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faqTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    How is my IELTS score calculated?
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="faqTwo" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Your IELTS score is calculated based on your performance in practice tests. Each test contributes to your overall score, with more recent tests having a higher weight in the calculation.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="faqThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    What's the difference between short and full practice?
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="faqThree" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Short practice tests include fewer questions and simpler passages, making them ideal for quick study sessions. Full practice tests are more comprehensive and closely mimic the actual IELTS exam format.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4">Contact Us</h5>
+                    <p>If you couldn't find an answer to your question, please feel free to contact our support team:</p>
+                    <ul>
+                        <li>Email: support@sino-ielts.com</li>
+                        <li>Phone: +1 (555) 123-4567</li>
+                        <li>Hours: Monday to Friday, 9 AM - 5 PM EST</li>
+                    </ul>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'homepage' %}" class="btn btn-primary">Return to Homepage</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

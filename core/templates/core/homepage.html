@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5 pb-5">
+    <div class="row">
+        <!-- Coach Element -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4>Your Coach</h4>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ selected_coach.image.url }}" alt="{{ selected_coach.name }}" class="img-fluid rounded-circle" style="max-height: 200px;" data-bs-toggle="modal" data-bs-target="#coachModal">
+                    <h3 class="mt-3">{{ selected_coach.name }}</h3>
+                    <p>{{ selected_coach.description }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Start Practicing Box (moved here) -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h4>Welcome to Sino!</h4>
+                </div>
+                <div class="card-body">
+                    <p>Your AI IELTS tutor to help you prepare for your exam. Start with a practice session to improve your skills.</p>
+                    <div class="text-center mt-4">
+                        <a href="{% url 'practice_landing' %}" class="btn btn-primary btn-lg">Start Practicing</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Panel (moved to bottom, wider but thinner) -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Your Statistics</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h5>IELTS Score</h5>
+                            <p class="display-6">
+                                {% if user.is_authenticated and user.profile.avg_ielts_score %}
+                                    {{ user.profile.avg_ielts_score }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Practice Count</h5>
+                            <p class="display-6">
+                                {% if user.is_authenticated %}
+                                    {{ user.profile.practice_count }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5>Rating</h5>
+                            <p class="display-6">
+                                {% if user.is_authenticated and user.profile.rating %}
+                                    {{ user.profile.rating }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coach Selection Modal -->
+<div class="modal fade" id="coachModal" tabindex="-1" aria-labelledby="coachModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="coachModalLabel">Select Your Coach</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    {% for coach in coaches %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 {% if coach.id == selected_coach.id %}border-primary{% endif %}">
+                            <div class="card-body text-center">
+                                <img src="{{ coach.image.url }}" alt="{{ coach.name }}" class="img-fluid rounded-circle mb-3" style="max-height: 150px;">
+                                <h4>{{ coach.name }}</h4>
+                                <p>{{ coach.description }}</p>
+                                <a href="{% url 'select_coach' coach.id %}" class="btn btn-sm {% if coach.id == selected_coach.id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    {% if coach.id == selected_coach.id %}Selected{% else %}Select{% endif %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5 pb-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h2>Practice Results</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h3>IELTS Score</h3>
+                            <p class="display-1">{{ score }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>Correct Answers</h3>
+                            <p class="display-1">
+                                {{ user_answers|dictsortreversed:"is_correct"|first }}
+                                <small class="text-muted">/ {{ questions|length }}</small>
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h3>Time Taken</h3>
+                            <p class="display-1">
+                                {{ session.end_time|timeuntil:session.start_time }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Question Breakdown</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Question</th>
+                                    <th>Your Answer</th>
+                                    <th>Correct Answer</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for answer in user_answers %}
+                                <tr>
+                                    <td>{{ answer.question.text|truncatechars:50 }}</td>
+                                    <td>{{ answer.answer|default:"No answer" }}</td>
+                                    <td>{{ answer.question.correct_answer }}</td>
+                                    <td>
+                                        {% if answer.is_correct %}
+                                            <span class="badge bg-success">Correct</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Incorrect</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Reading Passage</h3>
+                </div>
+                <div class="card-body">
+                    <h4>{{ passage.title }}</h4>
+                    <div class="reading-passage">
+                        {{ passage.content|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mb-4">
+                <a href="{% url 'homepage' %}" class="btn btn-primary btn-lg">Return to Homepage</a>
+                <a href="{% url 'practice_landing' %}" class="btn btn-secondary btn-lg">Practice Again</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

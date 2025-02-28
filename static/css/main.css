@@ -1,0 +1,125 @@
+/* Main CSS for Sino IELTS Tutor App */
+
+/* Base styling */
+body {
+    padding-bottom: 70px; /* To accommodate the bottom navigation */
+}
+
+/* Coach styling */
+.coach-image {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.coach-image:hover {
+    transform: scale(1.05);
+}
+
+/* Stats panel styling */
+.stats-panel .display-6 {
+    font-size: 2rem;
+}
+
+/* Navigation styling */
+.nav-link.active {
+    font-weight: bold;
+    border-bottom: 2px solid #007bff;
+}
+
+/* Question navigation styling */
+.question-nav-btn {
+    width: 36px;
+    height: 36px;
+    margin: 0 2px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Reading passage styling */
+.reading-passage {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* Timer warning */
+.timer-warning {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Mark for review */
+.marked-for-review {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+}
+
+/* Practice test styling */
+.practice-container {
+    height: calc(100vh - 150px);
+}
+
+/* Custom scrollbar */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #6c757d #f8f9fa;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #6c757d;
+    border-radius: 20px;
+}
+
+/* Coach selection modal */
+.coach-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.coach-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.coach-card.selected {
+    border: 3px solid #007bff;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Result page styling */
+.result-score {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.result-metric {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-panel .display-6 {
+        font-size: 1.5rem;
+    }
+    
+    .question-nav-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+    
+    .practice-container {
+        height: auto;
+    }
+}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2>About Sino</h2>
+                </div>
+                <div class="card-body">
+                    <h4>Our Mission</h4>
+                    <p>
+                        Sino is an AI-powered IELTS tutoring platform designed to help students around the world prepare for their IELTS exams effectively and efficiently. Our mission is to make high-quality IELTS preparation accessible to everyone, regardless of location or financial constraints.
+                    </p>
+                    
+                    <h4 class="mt-4">How Sino Works</h4>
+                    <p>
+                        Sino uses advanced artificial intelligence to provide personalized IELTS tutoring. Our virtual coaches analyze your performance in practice tests and provide tailored feedback to help you improve your skills. The platform adapts to your learning style and focuses on areas where you need the most help.
+                    </p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5>Practice</h5>
+                                    <p>Take practice tests that mimic the actual IELTS exam format</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5>Analysis</h5>
+                                    <p>Receive detailed analysis of your performance</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5>Improvement</h5>
+                                    <p>Get personalized tips and strategies to improve your score</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h4 class="mt-4">Our Team</h4>
+                    <p>
+                        Sino was developed by a team of IELTS experts, language educators, and AI specialists. Our team has decades of combined experience in IELTS preparation and has helped thousands of students achieve their target scores.
+                    </p>
+                    
+                    <h4 class="mt-4">Privacy & Security</h4>
+                    <p>
+                        At Sino, we take your privacy and data security seriously. All user data is encrypted and stored securely. We do not share your personal information with third parties without your explicit consent.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'homepage' %}" class="btn btn-primary">Return to Homepage</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

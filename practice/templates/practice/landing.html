@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4 mb-5 pb-5">
+    <div class="row">
+        <!-- Coach Section -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if selected_coach %}
+                        <img src="{{ selected_coach.image.url }}" alt="{{ selected_coach.name }}" class="img-fluid rounded-circle" style="max-height: 200px;">
+                        <h3 class="mt-3">{{ selected_coach.name }}</h3>
+                    {% else %}
+                        <img src="{% static 'images/default_coach.png' %}" alt="Default Coach" class="img-fluid rounded-circle" style="max-height: 200px;">
+                        <h3 class="mt-3">Dr. Lisa</h3>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions Section -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>IELTS Reading Practice</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Instructions:</h5>
+                    <p>Welcome to the IELTS Reading practice session. This test will help you improve your reading skills for the IELTS exam.</p>
+                    <ul>
+                        <li>You will be presented with a reading passage and 13 questions.</li>
+                        <li>Read the passage carefully and answer all questions.</li>
+                        <li>You have 20 minutes to complete the test.</li>
+                        <li>You can mark questions for review if you want to come back to them later.</li>
+                        <li>Once you submit your test, you'll receive instant feedback on your performance.</li>
+                    </ul>
+                    
+                    <div class="mt-4">
+                        <h5>Ask your tutor:</h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="Ask a question about the practice test..." id="tutorQuestion">
+                            <button class="btn btn-primary" type="button" id="sendQuestion">Send</button>
+                        </div>
+                        <div id="tutorResponse" class="card p-3 d-none">
+                            <p class="mb-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'start_short_practice' %}" class="btn btn-primary btn-lg">Start Short Practice</a>
+                        <a href="{% url 'start_full_practice' %}" class="btn btn-secondary btn-lg">Start Full Practice</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tutorQuestion = document.getElementById('tutorQuestion');
+        const sendQuestion = document.getElementById('sendQuestion');
+        const tutorResponse = document.getElementById('tutorResponse');
+        const responseText = tutorResponse.querySelector('p');
+        
+        // Simulate tutor responses
+        const responses = [
+            "The short practice takes about 10 minutes, while the full practice is 20 minutes.",
+            "Focus on understanding the main ideas rather than every single word.",
+            "Try to manage your time well. Spend about 2 minutes per question.",
+            "Make sure to read the instructions for each question carefully.",
+            "It's okay to mark questions for review and come back to them later."
+        ];
+        
+        sendQuestion.addEventListener('click', function() {
+            if (tutorQuestion.value.trim() === '') return;
+            
+            // Show a random response
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            responseText.textContent = randomResponse;
+            tutorResponse.classList.remove('d-none');
+            
+            // Clear the input
+            tutorQuestion.value = '';
+        });
+        
+        tutorQuestion.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendQuestion.click();
+            }
+        });
+    });
+</script>
+{% endblock %}

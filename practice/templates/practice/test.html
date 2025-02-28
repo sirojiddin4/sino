@@ -48,7 +48,7 @@
                         <p>{{ question.text }}</p>
                         
                         {% if question.question_type == 'multiple_choice' %}
-                            {% for option in question.options %}
+                            {% for option in question.options.all %}
                             <div class="form-check">
                                 <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
                                 {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
@@ -334,4 +334,4 @@
         });
     });
 </script>
-{% endblock %}
+{% endblock %}  

@@ -11,13 +11,17 @@ from accounts.models import MotherTongue, Profile
 from core.models import Coach
 from practice.models import ReadingPassage, Question, QuestionOption
 
+# initial_data.py (add or modify the create_mother_tongues function)
+
 def create_mother_tongues():
     """Create mother tongue options"""
     languages = [
         'English', 'Spanish', 'French', 'German', 'Italian',
         'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian',
         'Hindi', 'Portuguese', 'Dutch', 'Swedish', 'Greek',
-        'Turkish', 'Vietnamese', 'Thai', 'Indonesian', 'Malay'
+        'Turkish', 'Vietnamese', 'Thai', 'Indonesian', 'Malay',
+        # Add these new options
+        'Uzbek', 'Indian', 'Pashto', 'Vietnamese', 'Russian'
     ]
     
     for language in languages:

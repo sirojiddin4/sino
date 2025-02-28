@@ -1,6 +1,8 @@
 from django.contrib import admin
 from .models import ReadingPassage, Question, QuestionOption, PracticeSession, UserAnswer
 
+admin.site.register(QuestionOption)
+
 class QuestionOptionInline(admin.TabularInline):
     model = QuestionOption
     extra = 4

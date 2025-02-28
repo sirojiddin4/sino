@@ -60,6 +60,12 @@ def practice_test(request, session_id):
     questions = passage.questions.all()
     user_answers = session.user_answers.all()
     
+    # Prepare question data for the template
+    for question in questions:
+        # Make sure options are prefetched for each question
+        if question.question_type == 'multiple_choice':
+            question.option_list = question.options.all()  # Use a different name to avoid conflicts
+    
     # Calculate remaining time (20 minutes from start time)
     start_time = session.start_time
     end_time = start_time + datetime.timedelta(minutes=20)

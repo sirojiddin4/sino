@@ -1,3 +1,4 @@
+# accounts/models.py
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -16,6 +17,8 @@ class Profile(models.Model):
     practice_count = models.IntegerField(default=0)
     rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
     selected_coach = models.ForeignKey('core.Coach', on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
+    # Add profile image field
+    profile_image = models.ImageField(upload_to='profile_images', default='profile_images/default_user.png', null=True, blank=True)
     
     def __str__(self):
         return f"{self.user.username}'s profile"

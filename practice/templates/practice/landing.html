@@ -4,56 +4,69 @@
 {% block content %}
 <div class="container mt-4 mb-5 pb-5">
     <div class="row">
-        <!-- Coach Section -->
+        <!-- Left Column: Coach and Practice Buttons -->
         <div class="col-md-4">
-            <div class="card">
+            <!-- Coach Section -->
+            <div class="card mb-4">
                 <div class="card-body text-center">
                     {% if selected_coach %}
-                        <img src="{{ selected_coach.image.url }}" alt="{{ selected_coach.name }}" class="img-fluid rounded-circle" style="max-height: 200px;">
+                        <img src="{{ selected_coach.image.url }}" alt="{{ selected_coach.name }}" class="img-fluid rounded-circle coach-image" style="max-height: 200px;">
                         <h3 class="mt-3">{{ selected_coach.name }}</h3>
                     {% else %}
-                        <img src="{% static 'images/default_coach.png' %}" alt="Default Coach" class="img-fluid rounded-circle" style="max-height: 200px;">
+                        <img src="{% static 'images/default_coach.png' %}" alt="Default Coach" class="img-fluid rounded-circle coach-image" style="max-height: 200px;">
                         <h3 class="mt-3">Dr. Lisa</h3>
                     {% endif %}
                 </div>
             </div>
-        </div>
-        
-        <!-- Instructions Section -->
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4>IELTS Reading Practice</h4>
-                </div>
-                <div class="card-body">
-                    <h5>Instructions:</h5>
-                    <p>Welcome to the IELTS Reading practice session. This test will help you improve your reading skills for the IELTS exam.</p>
-                    <ul>
-                        <li>You will be presented with a reading passage and 13 questions.</li>
-                        <li>Read the passage carefully and answer all questions.</li>
-                        <li>You have 20 minutes to complete the test.</li>
-                        <li>You can mark questions for review if you want to come back to them later.</li>
-                        <li>Once you submit your test, you'll receive instant feedback on your performance.</li>
-                    </ul>
-                    
-                    <div class="mt-4">
-                        <h5>Ask your tutor:</h5>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Ask a question about the practice test..." id="tutorQuestion">
-                            <button class="btn btn-primary" type="button" id="sendQuestion">Send</button>
-                        </div>
-                        <div id="tutorResponse" class="card p-3 d-none">
-                            <p class="mb-0"></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
-            <div class="card">
+            <!-- Practice Buttons (moved from bottom) -->
+            <div class="card mb-4">
                 <div class="card-body">
                     <div class="d-grid gap-3">
                         <a href="{% url 'start_short_practice' %}" class="btn btn-primary btn-lg">Start Short Practice</a>
                         <a href="{% url 'start_full_practice' %}" class="btn btn-secondary btn-lg">Start Full Practice</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column: Chat Interface -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>IELTS Reading Practice</h4>
+                </div>
+                
+                <!-- Chat Area -->
+                <div class="card-body chat-container" id="chatContainer">
+
+                    <!-- Initial instruction message from coach -->
+                    <div class="chat-message coach-message">
+                        <div class="message-avatar">
+                            <img src="{% if selected_coach %}{{ selected_coach.image.url }}{% else %}{% static 'images/default_coach.png' %}{% endif %}" 
+                            alt="Coach" 
+                            class="rounded-circle" 
+                            style="width: 48px; height: 48px;">
+                        </div>
+                        <div class="message-content">
+                            <p>Welcome to the IELTS Reading practice session. This test will help you improve your reading skills for the IELTS exam.</p>
+                            <ul>
+                                <li>You will be presented with a reading passage and 13 questions.</li>
+                                <li>Read the passage carefully and answer all questions.</li>
+                                <li>You have 20 minutes to complete the test.</li>
+                                <li>You can mark questions for review if you want to come back to them later.</li>
+                                <li>Once you submit your test, you'll receive instant feedback on your performance.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Chat messages will be added here dynamically -->
+                </div>
+                
+                <!-- Chat Input Area (Fixed at Bottom of Card) -->
+                <div class="card-footer chat-input-area">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Ask a question about the practice test..." id="tutorQuestion">
+                        <button class="btn btn-primary" type="button" id="sendQuestion">Send</button>
                     </div>
                 </div>
             </div>
@@ -67,8 +80,14 @@
     document.addEventListener('DOMContentLoaded', function() {
         const tutorQuestion = document.getElementById('tutorQuestion');
         const sendQuestion = document.getElementById('sendQuestion');
-        const tutorResponse = document.getElementById('tutorResponse');
-        const responseText = tutorResponse.querySelector('p');
+        const chatContainer = document.getElementById('chatContainer');
+        
+        // Sample coach profile image URL - use the actual URL from your template context
+        const coachImageUrl = "{% if selected_coach %}{{ selected_coach.image.url }}{% else %}{% static 'images/default_coach.png' %}{% endif %}";
+        
+        // Sample user profile image - you might want to replace this with the actual user's profile image
+        // Sample user profile image - use the actual user's profile image if available
+        const userImageUrl = "{% if user.is_authenticated and user.profile.profile_image %}{{ user.profile.profile_image.url }}{% else %}{% static 'images/user_avatar.png' %}{% endif %}";
         
         // Simulate tutor responses
         const responses = [
@@ -79,23 +98,71 @@
             "It's okay to mark questions for review and come back to them later."
         ];
         
+        // Function to add a user message to the chat
+        function addUserMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message user-message';
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <img src="${userImageUrl}" alt="User" class="rounded-circle" style="width: 48px; height: 48px;">
+                </div>
+                <div class="message-content">
+                    <p>${text}</p>
+                </div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        // Function to add a coach message to the chat
+        function addCoachMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message coach-message';
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <img src="${coachImageUrl}" alt="Coach" class="rounded-circle" style="width: 48px; height: 48px;">
+                </div>
+                <div class="message-content">
+                    <p>${text}</p>
+                </div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // Function to scroll the chat to the bottom
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Event listener for the send button
         sendQuestion.addEventListener('click', function() {
-            if (tutorQuestion.value.trim() === '') return;
+            const question = tutorQuestion.value.trim();
+            if (question === '') return;
             
-            // Show a random response
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-            responseText.textContent = randomResponse;
-            tutorResponse.classList.remove('d-none');
+            // Add the user's question to the chat
+            addUserMessage(question);
             
             // Clear the input
             tutorQuestion.value = '';
+            
+            // Simulate a delay before the coach responds (for a more natural feel)
+            setTimeout(() => {
+                // Get a random response from the array
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addCoachMessage(randomResponse);
+            }, 500);
         });
         
+        // Allow pressing Enter to send a message
         tutorQuestion.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendQuestion.click();
             }
         });
+        
+        // Initial scroll to bottom (to show the instructions)
+        scrollToBottom();
     });
 </script>
 {% endblock %}

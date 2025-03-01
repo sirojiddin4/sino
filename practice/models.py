@@ -52,3 +52,43 @@ class UserAnswer(models.Model):
     
     def __str__(self):
         return f"Answer for {self.question}"
+
+# Add these to your existing practice/models.py file
+
+class ChatConversation(models.Model):
+    """Model to store chat conversations between users and coaches"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_conversations')
+    title = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+    
+    def get_display_title(self):
+        """Returns a formatted title for display"""
+        # Truncate title if too long
+        if len(self.title) > 30:
+            return self.title[:27] + "..."
+        return self.title
+
+class ChatMessage(models.Model):
+    """Model to store individual chat messages"""
+    SENDER_CHOICES = (
+        ('user', 'User'),
+        ('coach', 'Coach'),
+    )
+    
+    conversation = models.ForeignKey(ChatConversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['timestamp']
+    
+    def __str__(self):
+        return f"Message from {self.sender} at {self.timestamp.strftime('%Y-%m-%d %H:%M')}"

@@ -6,15 +6,25 @@ from .models import ReadingPassage, Question, PracticeSession, UserAnswer
 import random
 import datetime
 
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from .models import ChatConversation, ChatMessage
+import json
+
+# Update the practice_landing view to include chat conversations
 def practice_landing(request):
     # Get the user's selected coach if authenticated
     if request.user.is_authenticated:
         selected_coach = request.user.profile.selected_coach
+        # Get user's chat conversations
+        chat_conversations = ChatConversation.objects.filter(user=request.user)
     else:
         selected_coach = None
+        chat_conversations = []
     
     context = {
         'selected_coach': selected_coach,
+        'chat_conversations': chat_conversations,
     }
     
     return render(request, 'practice/landing.html', context)
@@ -202,3 +212,163 @@ def practice_results(request, session_id):
     }
     
     return render(request, 'practice/results.html', context)
+
+@login_required
+@require_POST
+def create_chat_conversation(request):
+    """Create a new chat conversation"""
+    data = json.loads(request.body)
+    first_message = data.get('first_message', '')
+    
+    # Use the first message as the title, truncate if necessary
+    title = first_message[:100]
+    
+    # Check if a conversation with this title exists
+    similar_titles = ChatConversation.objects.filter(user=request.user, title__startswith=title).count()
+    
+    if similar_titles > 0:
+        # Append counter if similar title exists
+        title = f"{title} ({similar_titles})"
+    
+    # Create the conversation
+    conversation = ChatConversation.objects.create(
+        user=request.user,
+        title=title
+    )
+    
+    # Add the first message
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender='user',
+        content=first_message
+    )
+    
+    # Add initial coach message
+    coach_response = get_coach_response(first_message)
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender='coach',
+        content=coach_response
+    )
+    
+    return JsonResponse({
+        'status': 'success',
+        'conversation_id': conversation.id,
+        'title': conversation.get_display_title(),
+        'coach_response': coach_response
+    })
+
+@login_required
+@require_POST
+def add_chat_message(request, conversation_id):
+    """Add a message to an existing conversation"""
+    conversation = get_object_or_404(ChatConversation, id=conversation_id, user=request.user)
+    data = json.loads(request.body)
+    message_content = data.get('message', '')
+    
+    # Add user message
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender='user',
+        content=message_content
+    )
+    
+    # Add coach response
+    coach_response = get_coach_response(message_content)
+    ChatMessage.objects.create(
+        conversation=conversation,
+        sender='coach',
+        content=coach_response
+    )
+    
+    # Update the conversation timestamp
+    conversation.save()  # This will update the 'updated_at' field
+    
+    return JsonResponse({
+        'status': 'success',
+        'coach_response': coach_response
+    })
+
+@login_required
+def get_conversation(request, conversation_id):
+    """Get all messages for a conversation"""
+    conversation = get_object_or_404(ChatConversation, id=conversation_id, user=request.user)
+    messages = conversation.messages.all()
+    
+    messages_data = [{
+        'sender': msg.sender,
+        'content': msg.content,
+        'timestamp': msg.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    } for msg in messages]
+    
+    return JsonResponse({
+        'status': 'success',
+        'title': conversation.title,
+        'messages': messages_data
+    })
+
+# Helper function to get coach responses
+def get_coach_response(message):
+    """Generate a coach response to a user message - currently returns a random response"""
+    # In a real implementation, this could be connected to an AI model
+    # For now, we'll use the same random responses as in the JS
+    import random
+    responses = [
+        "The short practice takes about 10 minutes, while the full practice is 20 minutes.",
+        "Focus on understanding the main ideas rather than every single word.",
+        "Try to manage your time well. Spend about 2 minutes per question.",
+        "Make sure to read the instructions for each question carefully.",
+        "It's okay to mark questions for review and come back to them later."
+    ]
+    return random.choice(responses)
+
+# Add these to your existing views.py file
+
+@login_required
+@require_POST
+def rename_conversation(request, conversation_id):
+    """Rename a chat conversation"""
+    conversation = get_object_or_404(ChatConversation, id=conversation_id, user=request.user)
+    
+    try:
+        data = json.loads(request.body)
+        new_title = data.get('title', '').strip()
+        
+        if not new_title:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Title cannot be empty'
+            })
+        
+        # Update the conversation title
+        conversation.title = new_title
+        conversation.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'title': conversation.get_display_title()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+@login_required
+@require_POST
+def delete_conversation(request, conversation_id):
+    """Delete a chat conversation"""
+    conversation = get_object_or_404(ChatConversation, id=conversation_id, user=request.user)
+    
+    try:
+        # Delete the conversation and all related messages
+        conversation.delete()
+        
+        return JsonResponse({
+            'status': 'success'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })

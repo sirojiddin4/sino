@@ -243,4 +243,86 @@ body {
         width: 24px !important;
         height: 24px !important;
     }
+    /* Add these to your existing main.css file */
+
+/* Add these to your existing main.css file */
+
+/* Chat history list styles */
+.chat-history-container {
+    height: 300px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.conversation-item {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    transition: background-color 0.2s ease;
+}
+
+.conversation-item:hover {
+    background-color: #f8f9fa;
+}
+
+.conversation-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.conversation-date {
+    font-size: 0.8rem;
+}
+
+/* Make the chat interface fill the available height */
+#chatInterface {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 400px;
+    max-height: calc(100vh - 300px);
+}
+
+/* Add a horizontal line after the welcome message */
+.chat-message:first-child {
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+/* Style the new chat button */
+#newChatBtn {
+    font-size: 0.85rem;
+}
+
+/* Adjust the column heights to match */
+@media (min-width: 768px) {
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    
+    .row > [class*='col-'] {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .card {
+        flex: 1;
+    }
+    
+    #chatInterface {
+        height: 100%;
+    }
+}
 }

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container mt-4 mb-5 pb-5">
     <div class="row">
-        <!-- Left Column: Coach and Practice Buttons -->
+        <!-- Left Column: Coach, Chat History, and Practice Buttons -->
         <div class="col-md-4">
             <!-- Coach Section -->
             <div class="card mb-4">
@@ -19,7 +19,28 @@
                 </div>
             </div>
             
-            <!-- Practice Buttons (moved from bottom) -->
+            <!-- Chat History Section (New) -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Chat History</h5>
+                </div>
+                <div class="card-body chat-history-container" style="max-height: 200px; overflow-y: auto;">
+                    <ul class="list-group chat-history-list">
+                        {% if chat_conversations %}
+                            {% for conversation in chat_conversations %}
+                                <li class="list-group-item conversation-item" data-conversation-id="{{ conversation.id }}">
+                                    <span class="conversation-title">{{ conversation.get_display_title }}</span>
+                                    <span class="text-muted conversation-date">{{ conversation.updated_at|date:"M d, Y" }}</span>
+                                </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-muted">No conversations yet</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Practice Buttons -->
             <div class="card mb-4">
                 <div class="card-body">
                     <div class="d-grid gap-3">
@@ -32,14 +53,18 @@
         
         <!-- Right Column: Chat Interface -->
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
+            <div class="card" id="chatInterface" style="height: calc(100% - 20px);">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4>IELTS Reading Practice</h4>
+                    <div>
+                        <button id="newChatBtn" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-plus-circle"></i> New Chat
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Chat Area -->
-                <div class="card-body chat-container" id="chatContainer">
-
+                <div class="card-body chat-container" id="chatContainer" style="flex: 1; overflow-y: auto;">
                     <!-- Initial instruction message from coach -->
                     <div class="chat-message coach-message">
                         <div class="message-avatar">
@@ -73,6 +98,11 @@
         </div>
     </div>
 </div>
+
+<!-- Hidden input to store CSRF token for AJAX requests -->
+<input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+<!-- Hidden input to store current conversation ID -->
+<input type="hidden" id="currentConversationId" value="">
 {% endblock %}
 
 {% block scripts %}
@@ -81,22 +111,25 @@
         const tutorQuestion = document.getElementById('tutorQuestion');
         const sendQuestion = document.getElementById('sendQuestion');
         const chatContainer = document.getElementById('chatContainer');
+        const newChatBtn = document.getElementById('newChatBtn');
+        const csrfToken = document.getElementById('csrfToken').value;
+        const conversationItems = document.querySelectorAll('.conversation-item');
+        const currentConversationIdInput = document.getElementById('currentConversationId');
         
-        // Sample coach profile image URL - use the actual URL from your template context
+        // Coach and user images
         const coachImageUrl = "{% if selected_coach %}{{ selected_coach.image.url }}{% else %}{% static 'images/default_coach.png' %}{% endif %}";
-        
-        // Sample user profile image - you might want to replace this with the actual user's profile image
-        // Sample user profile image - use the actual user's profile image if available
         const userImageUrl = "{% if user.is_authenticated and user.profile.profile_image %}{{ user.profile.profile_image.url }}{% else %}{% static 'images/user_avatar.png' %}{% endif %}";
         
-        // Simulate tutor responses
-        const responses = [
+        // Backup responses for when the server is not available
+        const fallbackResponses = [
             "The short practice takes about 10 minutes, while the full practice is 20 minutes.",
             "Focus on understanding the main ideas rather than every single word.",
             "Try to manage your time well. Spend about 2 minutes per question.",
             "Make sure to read the instructions for each question carefully.",
             "It's okay to mark questions for review and come back to them later."
         ];
+        
+        let isNewChat = true;
         
         // Function to add a user message to the chat
         function addUserMessage(text) {
@@ -135,6 +168,138 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
+        // Function to clear the chat container (except for the welcome message)
+        function clearChat() {
+            // Remove all messages
+            while (chatContainer.childNodes.length > 1) {
+                chatContainer.removeChild(chatContainer.lastChild);
+            }
+            isNewChat = true;
+            currentConversationIdInput.value = '';
+        }
+        
+        // Function to load a conversation
+        function loadConversation(conversationId) {
+            fetch(`/practice/chat/${conversationId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Clear chat first
+                        clearChat();
+                        
+                        // Set the current conversation ID
+                        currentConversationIdInput.value = conversationId;
+                        isNewChat = false;
+                        
+                        // Add all messages to the chat
+                        data.messages.forEach(msg => {
+                            if (msg.sender === 'user') {
+                                addUserMessage(msg.content);
+                            } else {
+                                addCoachMessage(msg.content);
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading conversation:', error);
+                });
+        }
+        
+        // Function to create a new conversation
+        function createConversation(message) {
+            fetch('/practice/chat/create/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    first_message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Set the current conversation ID
+                    currentConversationIdInput.value = data.conversation_id;
+                    isNewChat = false;
+                    
+                    // Add the coach response
+                    addCoachMessage(data.coach_response);
+                    
+                    // Add the conversation to the history list
+                    addConversationToHistory(data.conversation_id, data.title);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating conversation:', error);
+                // Fall back to local behavior
+                const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+                addCoachMessage(randomResponse);
+            });
+        }
+        
+        // Function to add message to existing conversation
+        function addMessageToConversation(conversationId, message) {
+            fetch(`/practice/chat/${conversationId}/add/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Add the coach response
+                    addCoachMessage(data.coach_response);
+                }
+            })
+            .catch(error => {
+                console.error('Error adding message:', error);
+                // Fall back to local behavior
+                const randomResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+                addCoachMessage(randomResponse);
+            });
+        }
+        
+        // Function to add a new conversation to the history list
+        function addConversationToHistory(id, title) {
+            const historyList = document.querySelector('.chat-history-list');
+            const noConversationsItem = historyList.querySelector('.text-muted');
+            
+            if (noConversationsItem) {
+                historyList.removeChild(noConversationsItem);
+            }
+            
+            const today = new Date();
+            const formattedDate = `${today.toLocaleString('default', { month: 'short' })} ${today.getDate()}, ${today.getFullYear()}`;
+            
+            const newItem = document.createElement('li');
+            newItem.className = 'list-group-item conversation-item';
+            newItem.setAttribute('data-conversation-id', id);
+            newItem.innerHTML = `
+                <span class="conversation-title">${title}</span>
+                <span class="text-muted conversation-date">${formattedDate}</span>
+            `;
+            
+            // Add event listener to the new item
+            newItem.addEventListener('click', function() {
+                loadConversation(id);
+            });
+            
+            // Add to the top of the list
+            if (historyList.firstChild) {
+                historyList.insertBefore(newItem, historyList.firstChild);
+            } else {
+                historyList.appendChild(newItem);
+            }
+        }
+        
         // Event listener for the send button
         sendQuestion.addEventListener('click', function() {
             const question = tutorQuestion.value.trim();
@@ -146,12 +311,29 @@
             // Clear the input
             tutorQuestion.value = '';
             
-            // Simulate a delay before the coach responds (for a more natural feel)
-            setTimeout(() => {
-                // Get a random response from the array
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                addCoachMessage(randomResponse);
-            }, 500);
+            // Check if this is a new chat or continuing an existing one
+            const currentConversationId = currentConversationIdInput.value;
+            
+            if (isNewChat) {
+                // Create a new conversation
+                createConversation(question);
+            } else {
+                // Add to existing conversation
+                addMessageToConversation(currentConversationId, question);
+            }
+        });
+        
+        // Event listener for the new chat button
+        newChatBtn.addEventListener('click', function() {
+            clearChat();
+        });
+        
+        // Event listeners for conversation items
+        conversationItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const conversationId = this.getAttribute('data-conversation-id');
+                loadConversation(conversationId);
+            });
         });
         
         // Allow pressing Enter to send a message

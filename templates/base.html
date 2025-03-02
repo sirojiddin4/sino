@@ -111,4 +111,58 @@
     <!-- Custom JS -->
     {% block scripts %}{% endblock %}
 </body>
+<!-- Add this to head section of base.html -->
+<style>
+    /* Inline styles for critical components */
+    .practice-buttons-debug {
+        height: 100px !important;
+        background-color: #f8f9fa !important;
+    }
+    
+    .practice-button-debug {
+        height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .chat-history-container {
+        max-height: 100px !important;
+        overflow-y: auto !important;
+    }
+    
+    #chatInterface {
+        height: 550px !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+</style>
+
+<!-- Add this right before closing body tag to debug static file loading -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if stylesheets loaded
+    let stylesheetsLoaded = [];
+    let customStylesLoaded = false;
+    
+    for (let i = 0; i < document.styleSheets.length; i++) {
+        try {
+            const href = document.styleSheets[i].href || 'inline';
+            stylesheetsLoaded.push(href);
+            if (href.includes('main.css')) {
+                customStylesLoaded = true;
+            }
+        } catch (e) {
+            stylesheetsLoaded.push('Access error - could be CORS');
+        }
+    }
+    
+    console.log('Stylesheets loaded:', stylesheetsLoaded);
+    console.log('Custom styles loaded:', customStylesLoaded);
+    
+    if (!customStylesLoaded) {
+        console.warn('⚠️ WARNING: main.css not loaded! Check your static files configuration');
+    }
+});
+</script>
 </html>

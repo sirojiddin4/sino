@@ -258,6 +258,7 @@ body {
 #chatInterface {
     display: flex;
     flex-direction: column;
+    max-height: 96%;
 }
 
 /* Add a horizontal line after the welcome message */
@@ -304,74 +305,49 @@ body {
     .practice-container {
         height: auto;
     }
-    
-    /* More specific avatar styling */
-    .chat-message .message-avatar img.rounded-circle {
-        width: 24px !important;
-        height: 24px !important;
-        max-width: 24px !important;
-        max-height: 24px !important;
-        min-width: 24px !important;
-        min-height: 24px !important;
-        object-fit: cover !important;
-    }
-
-    /* Override any Bootstrap img-fluid classes that might be affecting avatars */
-    .chat-message .message-avatar img.rounded-circle.img-fluid {
-        max-width: 24px !important;
-        width: 24px !important;
-    }
-
-    /* Target specifically the initial coach message that's in the HTML */
-    #chatContainer > .chat-message:first-child .message-avatar img {
-        width: 24px !important;
-        height: 24px !important;
-    }
-    
-    /* Adjust container height for mobile */
-    .container.mt-4.mb-5.pb-5 {
-        min-height: calc(100vh - 100px);
-    }
-    
-    /* Adjust chat history container height for mobile */
-    .chat-history-container {
-        max-height: 150px;
-    }
-    /* Practice buttons card styling */
-.practice-buttons-card {
-    height: auto;
-    max-height: 900px;
+    /* Chat history styling */
+.chat-history-list .list-group-item {
+    border: none !important; /* Remove borders */
+    padding: 8px 12px; /* Slightly reduce padding */
+    border-radius: 0; /* Remove rounded corners */
 }
 
-.practice-buttons-card .card-body {
-    padding: 1rem; /* Consistent padding */
+.chat-history-list .list-group-item:hover {
+    background-color: #f8f9fa; /* Light gray background on hover */
 }
 
-/* Button styling */
-.practice-button {
-    height: 48px;
+.conversation-content {
+    flex: 1;
+    overflow: hidden; /* To ensure the content doesn't overflow */
+}
+
+.conversation-title {
+    display: block; /* Make title appear on its own line */
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.conversation-date {
+    font-size: 0.75rem;
+}
+
+.conversation-actions {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    transition: all 0.2s ease;
+    opacity: 0.5; /* Make icons slightly transparent by default */
+    transition: opacity 0.2s ease;
 }
 
-.practice-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.conversation-item:hover .conversation-actions {
+    opacity: 1; /* Show icons at full opacity on hover */
 }
 
-/* Responsive adjustments */
-@media (max-width: 550px) {
-    .practice-buttons-card {
-        min-height: 100px;
-    }
-    
-    .practice-button {
-        height: 40px;
-        font-size: 0.9rem;
-    }
+/* Add a subtle divider between list items */
+.chat-history-list .list-group-item:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0 !important; /* Very light gray border */
 }
+        
 }

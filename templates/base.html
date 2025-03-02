@@ -25,11 +25,18 @@
         
         {% block content %}{% endblock %}
         
-        <!-- Hamburger menu button -->
-        <div class="position-fixed top-0 end-0 p-3">
+        <!-- Floating buttons container -->
+        <div class="position-fixed top-0 end-0 p-3 d-flex flex-column gap-2">
+           
+            
+            <!-- Hamburger menu button -->
             <button class="btn btn-light shadow-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas">
                 <i class="bi bi-list" style="font-size: 1.5rem;"></i>
             </button>
+             <!-- Home button -->
+             <a href="{% url 'homepage' %}" class="btn btn-light shadow-sm">
+                <img src="{% static 'images/homepage.png' %}" alt="Home" style="width: 1.5rem; height: 1.5rem;">
+            </a>
         </div>
         
         <!-- Off-canvas menu -->
@@ -43,9 +50,7 @@
         <div class="offcanvas-body">
             <ul class="list-group list-group-flush">
                 {% if user.is_authenticated %}
-                    <li class="list-group-item">
-                        <a href="{% url 'homepage' %}" class="text-decoration-none">Home</a>
-                    </li>
+                    <!-- Removed homepage link from here -->
                     <li class="list-group-item">
                         <a href="{% url 'profile' %}" class="text-decoration-none">Settings</a>
                     </li>
@@ -63,10 +68,7 @@
                         </form>
                     </li>
                 {% else %}
-                    </li>
-                    <li class="list-group-item">
-                        <a href="{% url 'homepage' %}" class="text-decoration-none">Home</a>
-                    </li>
+                    <!-- Removed homepage link from here -->
                     <li class="list-group-item">
                         <a href="{% url 'support' %}" class="text-decoration-none">Support</a>
                     </li>

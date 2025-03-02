@@ -1,337 +1,658 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block content %}
-<div class="container-fluid mt-3 mb-5 pb-5">
-    <!-- Header with User's Name and Timer -->
-    <div class="row bg-light py-2 mb-3 sticky-top">
-        <div class="col-6">
-            <h5>{{ request.user.username }}</h5>
-        </div>
-        <div class="col-6 text-end">
-            <h5 id="timer" data-remaining="{{ remaining_seconds }}">
-                {% if remaining_seconds > 0 %}
-                    {{ remaining_seconds }} seconds
-                {% else %}
-                    Time's up!
-                {% endif %}
-            </h5>
-        </div>
-    </div>
-    
-    <div class="row">
-        <!-- Reading Passage -->
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h4>{{ passage.title }}</h4>
-                </div>
-                <div class="card-body" style="height: 70vh; overflow-y: auto;">
-                    <div class="reading-passage">
-                        {{ passage.content|linebreaks }}
-                    </div>
-                </div>
-            </div>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sino - AI IELTS Tutor - Test Page</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        /* Inline styles for critical components */
+        .practice-buttons-debug {
+            height: 100px !important;
+            background-color: #f8f9fa !important;
+        }
         
-        <!-- Questions -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4>Questions</h4>
-                    <span id="currentQuestionLabel">1 of {{ questions|length }}</span>
+        .practice-button-debug {
+            height: 38px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .chat-history-container {
+            max-height: 100px !important;
+            overflow-y: auto !important;
+        }
+        
+        #chatInterface {
+            height: 550px !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        /* Navigation panel styles */
+        .bottom-nav-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #f8f9fa;
+            padding: 8px 10px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        /* Add bottom padding to main content to prevent overlap with fixed bottom nav */
+        .main-content {
+            padding-bottom: 70px; /* Reduced from 100px */
+        }
+        
+        /* Improved height management for content areas */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        /* Prevent unnecessary scrolling */
+        .container-fluid.px-0 {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Make question nav buttons more compact */
+        .question-nav-btn {
+            margin: 0;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            margin-right: 1px;
+            margin-bottom: 1px;
+            transition: all 0.2s ease;
+        }
+        
+        /* Style for answered questions - gold background, black text, no border */
+        .question-nav-btn.answered {
+            background-color: #FFD700; /* Gold color */
+            color: #000;
+            border-color: #FFD700;
+            font-weight: 500;
+        }
+        
+        /* Style for questions marked for review - circle shape */
+        .question-nav-btn.review {
+            border-radius: 50%;
+        }
+        
+        /* Active question button (currently viewed) */
+        .question-nav-btn.active {
+            background-color: #FFD700 !important; /* Gold for answered questions */
+            color: #000 !important;
+            border-color: #FFD700 !important;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.5); /* Blue outline to indicate current question */
+        }
+        
+        /* For unanswered active questions */
+        .question-nav-btn.active:not(.answered) {
+            background-color: #007bff !important; /* Primary blue */
+            color: #fff !important;
+            border-color: #007bff !important;
+        }
+
+        /* Questions navigation container */
+        .questions-nav-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            margin: 0 10px;
+            padding: 0 5px;
+            max-width: 75%;
+        }
+
+        /* Mobile responsiveness for navigation buttons */
+        @media (max-width: 768px) {
+            .question-nav-btn {
+                width: 24px;
+                height: 24px;
+                font-size: 0.65rem;
+                margin: 0;
+            }
+            
+            .bottom-nav-panel .btn-sm {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .review-checkbox-container {
+                margin-right: 3px;
+            }
+            
+            .review-checkbox-container label {
+                font-size: 0.7rem;
+            }
+        }
+        
+        /* Review checkbox in navigation */
+        .review-checkbox-container {
+            white-space: nowrap;
+            padding-right: 5px;
+            min-width: 70px;
+        }
+
+        .navigation-controls {
+            white-space: nowrap;
+            padding-left: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Improve scrollbar appearance for question navigation */
+        .questions-nav-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .questions-nav-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .questions-nav-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .questions-nav-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-0">
+        <!-- Main content starts here -->
+        <div class="container-fluid mb-5 main-content">
+            <!-- Header with User's Name and Timer -->
+            <div class="row bg-light py-1 mb-3 position-sticky top-0 shadow-sm" style="z-index: 1000;">
+                <div class="col-6">
+                    <span class="fw-bold">{{ request.user.username }}</span>
                 </div>
-                <div class="card-body" style="height: 60vh; overflow-y: auto;">
-                    {% for question in questions %}
-                    <div class="question-container {% if not forloop.first %}d-none{% endif %}" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
-                        <h5>Question {{ forloop.counter }}</h5>
-                        <p>{{ question.text }}</p>
-                        
-                        {% if question.question_type == 'multiple_choice' %}
-                            {% for option in question.options.all %}
-                            <div class="form-check">
-                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
-                                {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
-                                <label class="form-check-label" for="option_{{ option.id }}">
-                                    {{ option.text }}
-                                </label>
-                            </div>
-                            {% endfor %}
-                        {% elif question.question_type == 'true_false' %}
-                            <div class="form-check">
-                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
-                                {% if question.user_answer.answer == "true" %}checked{% endif %}>
-                                <label class="form-check-label" for="true_{{ question.id }}">
-                                    True
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
-                                {% if question.user_answer.answer == "false" %}checked{% endif %}>
-                                <label class="form-check-label" for="false_{{ question.id }}">
-                                    False
-                                </label>
-                            </div>
+                <div class="col-6 text-end">
+                    <span id="timer" class="fw-bold" data-remaining="{{ remaining_seconds }}">
+                        {% if remaining_seconds > 0 %}
+                            {{ remaining_seconds }} seconds
                         {% else %}
-                            <div class="form-group">
-                                <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{{ question.user_answer.answer }}</textarea>
-                            </div>
+                            Time's up!
                         {% endif %}
-                        
-                        <div class="form-check mt-3">
-                            <input class="form-check-input review-checkbox" type="checkbox" id="review_{{ question.id }}" 
-                            {% if question.user_answer.marked_for_review %}checked{% endif %}>
-                            <label class="form-check-label" for="review_{{ question.id }}">
-                                Mark for review
-                            </label>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- Reading Passage -->
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4>{{ passage.title }}</h4>
+                        </div>
+                        <div class="card-body" style="height: 72vh; overflow-y: auto;">
+                            <div class="reading-passage">
+                                {{ passage.content|linebreaks }}
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                <div class="card-footer">
-                    <div class="d-flex justify-content-between">
-                        <button class="btn btn-secondary" id="prevBtn">← Previous</button>
-                        <div>
+                
+                <!-- Questions -->
+                <div class="col-md-6" style="height: 555px;">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h4>Questions</h4>
+                            <span id="currentQuestionLabel">1 of {{ questions|length }}</span>
+                        </div>
+                        <div class="card-body">
                             {% for question in questions %}
-                                <button class="btn btn-outline-primary question-nav-btn" data-question-id="{{ question.id }}">{{ forloop.counter }}</button>
+                            <div class="question-container {% if not forloop.first %}d-none{% endif %}" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
+                                <h5>Question {{ forloop.counter }}</h5>
+                                <p>{{ question.text }}</p>
+                                
+                                {% if question.question_type == 'multiple_choice' %}
+                                    {% for option in question.options.all %}
+                                    <div class="form-check">
+                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
+                                        {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
+                                        <label class="form-check-label" for="option_{{ option.id }}">
+                                            {{ option.text }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                {% elif question.question_type == 'true_false' %}
+                                    <div class="form-check">
+                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
+                                        {% if question.user_answer.answer == "true" %}checked{% endif %}>
+                                        <label class="form-check-label" for="true_{{ question.id }}">
+                                            True
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
+                                        {% if question.user_answer.answer == "false" %}checked{% endif %}>
+                                        <label class="form-check-label" for="false_{{ question.id }}">
+                                            False
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    <div class="form-group">
+                                        <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{{ question.user_answer.answer }}</textarea>
+                                    </div>
+                                {% endif %}
+                            </div>
                             {% endfor %}
                         </div>
-                        <button class="btn btn-secondary" id="nextBtn">Next →</button>
-                    </div>
-                    <div class="d-grid mt-3">
-                        <button class="btn btn-primary" id="submitBtn">Submit Test</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Submit Confirmation Modal -->
-<div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="submitModalLabel">Confirm Submission</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure you want to submit your test? You won't be able to make changes after submission.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="{% url 'submit_test' session.id %}" class="btn btn-primary">Submit Test</a>
+        <!-- Bottom Navigation Panel -->
+        <div class="bottom-nav-panel">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- Review Checkbox in Navigation -->
+                            <div class="review-checkbox-container d-flex align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="nav_review_checkbox">
+                                    <label class="form-check-label" for="nav_review_checkbox">
+                                        Review
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Question Navigation Buttons -->
+                            <div class="questions-nav-container">
+                                <div class="d-flex flex-wrap">
+                                    {% for question in questions %}
+                                        <button class="btn btn-outline-primary question-nav-btn" data-question-id="{{ question.id }}">{{ forloop.counter }}</button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <!-- Navigation Controls -->
+                            <div class="navigation-controls">
+                                <button class="btn btn-secondary btn-sm me-1" id="prevBtn">← Prev</button>
+                                <button class="btn btn-secondary btn-sm me-1" id="nextBtn">Next →</button>
+                                <button class="btn btn-primary btn-sm" id="submitBtn">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
-{% endblock %}
 
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const timerEl = document.getElementById('timer');
-        const questionContainers = document.querySelectorAll('.question-container');
-        const navigationBtns = document.querySelectorAll('.question-nav-btn');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const submitBtn = document.getElementById('submitBtn');
-        const currentQuestionLabel = document.getElementById('currentQuestionLabel');
-        const answerInputs = document.querySelectorAll('.answer-input');
-        const reviewCheckboxes = document.querySelectorAll('.review-checkbox');
+        <!-- Submit Confirmation Modal -->
+        <div class="modal fade" id="submitModal" tabindex="-1" aria-labelledby="submitModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="submitModalLabel">Confirm Submission</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to submit your test? You won't be able to make changes after submission.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <a href="{% url 'submit_test' session.id %}" class="btn btn-primary">Submit Test</a>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        // Set up CSRF token for AJAX requests
-        const csrfToken = "{{ csrf_token }}";
-        
-        let currentQuestionIndex = 0;
-        let remainingSeconds = parseInt(timerEl.dataset.remaining);
-        
-        // Update timer every second
-        const timerInterval = setInterval(function() {
-            remainingSeconds--;
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const timerEl = document.getElementById('timer');
+            const questionContainers = document.querySelectorAll('.question-container');
+            const navigationBtns = document.querySelectorAll('.question-nav-btn');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const currentQuestionLabel = document.getElementById('currentQuestionLabel');
+            const answerInputs = document.querySelectorAll('.answer-input');
+            const navReviewCheckbox = document.getElementById('nav_review_checkbox');
             
-            if (remainingSeconds <= 0) {
-                clearInterval(timerInterval);
-                timerEl.textContent = "Time's up!";
+            // Set up CSRF token for AJAX requests
+            const csrfToken = "{{ csrf_token }}";
+            
+            let currentQuestionIndex = 0;
+            let remainingSeconds = parseInt(timerEl.dataset.remaining);
+            
+            // Update timer every second
+            const timerInterval = setInterval(function() {
+                remainingSeconds--;
                 
-                // Auto-submit the test
-                window.location.href = "{% url 'submit_test' session.id %}";
-            } else {
-                const minutes = Math.floor(remainingSeconds / 60);
-                const seconds = remainingSeconds % 60;
-                timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }, 1000);
-        
-        // Show a specific question
-        function showQuestion(index) {
-            // Hide all questions
-            questionContainers.forEach(container => {
-                container.classList.add('d-none');
-            });
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerEl.textContent = "Time's up!";
+                    
+                    // Auto-submit the test
+                    window.location.href = "{% url 'submit_test' session.id %}";
+                } else {
+                    const minutes = Math.floor(remainingSeconds / 60);
+                    const seconds = remainingSeconds % 60;
+                    timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
             
-            // Show the selected question
-            questionContainers[index].classList.remove('d-none');
-            
-            // Update the current question label
-            currentQuestionLabel.textContent = `${index + 1} of ${questionContainers.length}`;
-            
-            // Update navigation button states
-            prevBtn.disabled = index === 0;
-            nextBtn.disabled = index === questionContainers.length - 1;
-            
-            // Update the active navigation button
-            navigationBtns.forEach((btn, btnIndex) => {
-                btn.classList.toggle('btn-primary', btnIndex === index);
-                btn.classList.toggle('btn-outline-primary', btnIndex !== index);
-            });
-            
-            // Update the current question index
-            currentQuestionIndex = index;
-        }
-        
-        // Navigation button event listeners
-        navigationBtns.forEach((btn, index) => {
-            btn.addEventListener('click', () => {
-                showQuestion(index);
-            });
-        });
-        
-        // Previous button event listener
-        prevBtn.addEventListener('click', () => {
-            if (currentQuestionIndex > 0) {
-                showQuestion(currentQuestionIndex - 1);
-            }
-        });
-        
-        // Next button event listener
-        nextBtn.addEventListener('click', () => {
-            if (currentQuestionIndex < questionContainers.length - 1) {
-                showQuestion(currentQuestionIndex + 1);
-            }
-        });
-        
-        // Submit button event listener
-        submitBtn.addEventListener('click', () => {
-            const submitModal = new bootstrap.Modal(document.getElementById('submitModal'));
-            submitModal.show();
-        });
-        
-        // Save answer when input changes
-        answerInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                saveAnswer(input);
-            });
-            
-            if (input.tagName === 'TEXTAREA') {
-                input.addEventListener('blur', () => {
-                    saveAnswer(input);
+            // Show a specific question
+            function showQuestion(index) {
+                // Hide all questions
+                questionContainers.forEach(container => {
+                    container.classList.add('d-none');
                 });
+                
+                // Show the selected question
+                questionContainers[index].classList.remove('d-none');
+                
+                // Update the current question label
+                currentQuestionLabel.textContent = `${index + 1} of ${questionContainers.length}`;
+                
+                // Update navigation button states
+                prevBtn.disabled = index === 0;
+                nextBtn.disabled = index === questionContainers.length - 1;
+                
+                // Update the active navigation button
+                navigationBtns.forEach((btn, btnIndex) => {
+                    // Remove active class from all buttons
+                    btn.classList.remove('active');
+                    btn.classList.remove('btn-primary');
+                    
+                    // Set default styling for non-active buttons that aren't answered
+                    if (btnIndex !== index && !btn.classList.contains('answered')) {
+                        btn.classList.add('btn-outline-primary');
+                    }
+                    
+                    // Add active class to current button
+                    if (btnIndex === index) {
+                        btn.classList.add('active');
+                        
+                        // Apply appropriate styling based on answered status
+                        if (!btn.classList.contains('answered')) {
+                            btn.classList.add('btn-primary');
+                            btn.classList.remove('btn-outline-primary');
+                        }
+                    }
+                });
+                
+                // Update the current question index
+                currentQuestionIndex = index;
+                
+                // Update review checkbox in navigation
+                const questionId = questionContainers[index].dataset.questionId;
+                const isMarkedForReview = navigationBtns[index].classList.contains('review');
+                navReviewCheckbox.checked = isMarkedForReview;
             }
-        });
-        
-        // Save review status when checkbox changes
-        reviewCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', () => {
-                saveReviewStatus(checkbox);
+            
+            // Navigation button event listeners
+            navigationBtns.forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    showQuestion(index);
+                });
             });
-        });
-        
-        // Function to save an answer
-        function saveAnswer(inputElement) {
-            const questionId = inputElement.closest('.question-container').dataset.questionId;
-            let answerValue;
             
-            if (inputElement.type === 'radio') {
-                answerValue = inputElement.value;
-            } else if (inputElement.tagName === 'TEXTAREA') {
-                answerValue = inputElement.value;
-            }
-            
-            // Get the review status
-            const reviewCheckbox = document.getElementById(`review_${questionId}`);
-            const markForReview = reviewCheckbox.checked;
-            
-            // Send the data to the server
-            sendAnswerToServer(questionId, answerValue, markForReview);
-        }
-        
-        // Function to save review status
-        function saveReviewStatus(checkboxElement) {
-            const questionId = checkboxElement.closest('.question-container').dataset.questionId;
-            const markForReview = checkboxElement.checked;
-            
-            // Get the answer value
-            let answerValue = '';
-            const container = checkboxElement.closest('.question-container');
-            
-            const radioInputs = container.querySelectorAll('input[type="radio"]:checked');
-            if (radioInputs.length > 0) {
-                answerValue = radioInputs[0].value;
-            } else {
-                const textarea = container.querySelector('textarea');
-                if (textarea) {
-                    answerValue = textarea.value;
+            // Previous button event listener
+            prevBtn.addEventListener('click', () => {
+                if (currentQuestionIndex > 0) {
+                    showQuestion(currentQuestionIndex - 1);
                 }
-            }
-            
-            // Send the data to the server
-            sendAnswerToServer(questionId, answerValue, markForReview);
-            
-            // Update the navigation button appearance
-            const navButtonIndex = Array.from(questionContainers).findIndex(
-                cont => cont.dataset.questionId === questionId
-            );
-            
-            if (navButtonIndex !== -1) {
-                const navButton = navigationBtns[navButtonIndex];
-                navButton.classList.toggle('btn-warning', markForReview);
-            }
-        }
-        
-        // Function to send answer to server
-        function sendAnswerToServer(questionId, answer, markForReview) {
-            const url = `{% url 'save_answer' session_id=session.id question_id=0 %}`.replace('0', questionId);
-            
-            const formData = new FormData();
-            formData.append('answer', answer);
-            formData.append('mark_for_review', markForReview);
-            
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                },
-                body: formData,
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status !== 'success') {
-                    console.error('Error saving answer:', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
             });
-        }
-        
-        // Initialize the page
-        showQuestion(0);
-        
-        // Initialize review markers
-        reviewCheckboxes.forEach(checkbox => {
-            if (checkbox.checked) {
-                const questionId = checkbox.id.replace('review_', '');
-                const navButtonIndex = Array.from(questionContainers).findIndex(
+            
+            // Next button event listener
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < questionContainers.length - 1) {
+                    showQuestion(currentQuestionIndex + 1);
+                }
+            });
+            
+            // Submit button event listener
+            submitBtn.addEventListener('click', () => {
+                const submitModal = new bootstrap.Modal(document.getElementById('submitModal'));
+                submitModal.show();
+            });
+            
+            // Save answer when input changes
+            answerInputs.forEach(input => {
+                if (input.type === 'radio') {
+            // For radio buttons, add click handler to allow deselection
+                    input.addEventListener('click', (e) => {
+                        // Find all radio buttons in the same group
+                        const name = input.getAttribute('name');
+                        const radioGroup = document.querySelectorAll(`input[name="${name}"]`);
+                        
+                        // If this radio is already checked, uncheck it and prevent default
+                        if (input.getAttribute('data-previously-checked') === 'true') {
+                            e.preventDefault();
+                            
+                            // Uncheck this radio button
+                            input.checked = false;
+                            
+                            // Reset the previously-checked attribute for all radios in the group
+                            radioGroup.forEach(radio => {
+                                radio.setAttribute('data-previously-checked', 'false');
+                            });
+                            
+                            // Call saveAnswer with the container to handle the deselection
+                            const container = input.closest('.question-container');
+                            saveAnswerForContainer(container, '');
+                        } else {
+                            // Update previously-checked attribute for all radios in the group
+                            radioGroup.forEach(radio => {
+                                radio.setAttribute('data-previously-checked', 'false');
+                            });
+                            
+                            // Mark only this one as checked
+                            input.setAttribute('data-previously-checked', 'true');
+                            
+                            // Save the answer
+                            saveAnswer(input);
+                        }
+                    });
+                } else {
+                    // For other inputs like textareas
+                    input.addEventListener('change', () => {
+                        saveAnswer(input);
+                    });
+                    
+                    if (input.tagName === 'TEXTAREA') {
+                        // Add input event to catch deletions in real-time
+                        input.addEventListener('input', () => {
+                            saveAnswer(input);
+                        });
+                        
+                        input.addEventListener('blur', () => {
+                            saveAnswer(input);
+                        });
+                    }
+                }
+            });
+            
+            // Navigation review checkbox event listener
+            navReviewCheckbox.addEventListener('change', () => {
+                const questionId = questionContainers[currentQuestionIndex].dataset.questionId;
+                const markForReview = navReviewCheckbox.checked;
+                
+                // Get the answer value
+                let answerValue = '';
+                const container = questionContainers[currentQuestionIndex];
+                
+                const radioInputs = container.querySelectorAll('input[type="radio"]:checked');
+                if (radioInputs.length > 0) {
+                    answerValue = radioInputs[0].value;
+                } else {
+                    const textarea = container.querySelector('textarea');
+                    if (textarea) {
+                        answerValue = textarea.value;
+                    }
+                }
+                
+                // Send the data to the server
+                sendAnswerToServer(questionId, answerValue, markForReview);
+                
+                // Update the navigation button appearance for review status
+                navigationBtns[currentQuestionIndex].classList.toggle('review', markForReview);
+            });
+            
+            // Function to save an answer
+            function saveAnswer(inputElement) {
+                const container = inputElement.closest('.question-container');
+                let answerValue;
+                
+                if (inputElement.type === 'radio') {
+                    // For radio buttons, only get value if checked
+                    answerValue = inputElement.checked ? inputElement.value : '';
+                } else if (inputElement.tagName === 'TEXTAREA') {
+                    answerValue = inputElement.value;
+                }
+                
+                saveAnswerForContainer(container, answerValue);
+            }
+            
+            // Function to save answer from a container
+            function saveAnswerForContainer(container, answerValue) {
+                const questionId = container.dataset.questionId;
+                
+                // Find which index this question is
+                const questionIndex = Array.from(questionContainers).findIndex(
                     cont => cont.dataset.questionId === questionId
                 );
                 
-                if (navButtonIndex !== -1) {
-                    const navButton = navigationBtns[navButtonIndex];
-                    navButton.classList.add('btn-warning');
+                if (questionIndex > -1) {
+                    // Check if the answer is empty
+                    if (answerValue && answerValue.trim() !== '') {
+                        // Mark the corresponding nav button as answered
+                        navigationBtns[questionIndex].classList.add('answered');
+                        
+                        // Remove bootstrap classes that would override our custom styling
+                        navigationBtns[questionIndex].classList.remove('btn-outline-primary');
+                    } else {
+                        // Remove answered class if answer is empty
+                        navigationBtns[questionIndex].classList.remove('answered');
+                        
+                        // Restore original styling by adding btn-outline-primary
+                        // (but not if it's the currently active question)
+                        if (questionIndex !== currentQuestionIndex) {
+                            navigationBtns[questionIndex].classList.add('btn-outline-primary');
+                        } else {
+                            // For active question that's now unanswered
+                            navigationBtns[questionIndex].classList.add('btn-primary');
+                            navigationBtns[questionIndex].classList.remove('btn-outline-primary');
+                        }
+                    }
                 }
+                
+                // Get the review status from the navigation checkbox
+                const markForReview = navReviewCheckbox.checked;
+                
+                // Send the data to the server
+                sendAnswerToServer(questionId, answerValue || '', markForReview);
             }
+            
+            // Function to send answer to server
+            function sendAnswerToServer(questionId, answer, markForReview) {
+                const url = `{% url 'save_answer' session_id=session.id question_id=0 %}`.replace('0', questionId);
+                
+                const formData = new FormData();
+                formData.append('answer', answer);
+                formData.append('mark_for_review', markForReview);
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        console.error('Error saving answer:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+            
+            // Initialize review markers and answered questions
+            {% for question in questions %}
+                // Find the navigation button for this question
+                const navButton{{ forloop.counter }} = document.querySelector(`.question-nav-btn[data-question-id="{{ question.id }}"]`);
+                if (navButton{{ forloop.counter }}) {
+                    {% if question.user_answer.marked_for_review %}
+                        navButton{{ forloop.counter }}.classList.add('review');
+                    {% endif %}
+                    
+                    // Mark as answered if there's an answer
+                    {% if question.user_answer.answer and question.user_answer.answer != "" %}
+                        navButton{{ forloop.counter }}.classList.add('answered');
+                        
+                        // Remove bootstrap classes that would override our custom styling
+                        navButton{{ forloop.counter }}.classList.remove('btn-outline-primary');
+                    {% endif %}
+                }
+            {% endfor %}
+            
+            // Mark previously checked radio buttons
+            document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+                radio.setAttribute('data-previously-checked', 'true');
+            });
+            
+            // Initialize the page
+            showQuestion(0);
         });
+    </script>
+    
+    <!-- Debug script for static file loading -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if stylesheets loaded
+        let stylesheetsLoaded = [];
+        let customStylesLoaded = false;
+        
+        for (let i = 0; i < document.styleSheets.length; i++) {
+            try {
+                const href = document.styleSheets[i].href || 'inline';
+                stylesheetsLoaded.push(href);
+                if (href.includes('main.css')) {
+                    customStylesLoaded = true;
+                }
+            } catch (e) {
+                stylesheetsLoaded.push('Access error - could be CORS');
+            }
+        }
+        
+        console.log('Stylesheets loaded:', stylesheetsLoaded);
+        console.log('Custom styles loaded:', customStylesLoaded);
+        
+        if (!customStylesLoaded) {
+            console.warn('⚠️ WARNING: main.css not loaded! Check your static files configuration');
+        }
     });
-</script>
-{% endblock %}  
+    </script>
+</body>
+</html>

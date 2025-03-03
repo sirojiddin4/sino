@@ -196,36 +196,59 @@
             background: #555;
         }
 
-        /* New styles for questions */
+        /* New styles for collapsible questions */
         .questions-container {
             height: 77vh;
             overflow-y: auto;
             padding-right: 5px;
         }
 
-        .question-item {
-            margin-bottom: 20px;
+        .question-accordion {
+            margin-bottom: 12px;
             border: 1px solid #dee2e6;
             border-radius: 6px;
-            padding: 15px;
-            background-color: #fff;
+            overflow: hidden;
         }
 
-        .question-item.answered {
-            background-color: #fff3cd;
-        }
-
-        .question-item.active {
-            background-color: #cfe2ff;
-            border-color: #b6d4fe;
-        }
-
-        .question-title {
-            font-weight: bold;
-            margin-bottom: 10px;
+        .question-header {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid #dee2e6;
+            transition: background-color 0.2s;
+        }
+
+        .question-header:hover {
+            background-color: #e9ecef;
+        }
+
+        .question-header.answered {
+            background-color: #fff3cd;
+        }
+
+        .question-header.active {
+            background-color: #cfe2ff;
+        }
+
+        .question-body {
+            padding: 15px;
+            display: none;
+        }
+
+        .question-body.open {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chevron-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .chevron-icon.open {
+            transform: rotate(180deg);
         }
 
         .answered-badge {
@@ -253,6 +276,11 @@
 
         .review-badge.visible {
             display: inline-block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* For the scrollbar in the questions container */
@@ -329,47 +357,50 @@
                         <div class="card-body p-2" >
                             <div class="questions-container">
                                 {% for question in questions %}
-                                <div class="question-item" data-question-id="{{ question.id }}" id="question-item-{{ question.id }}">
-                                    <div class="question-title">
-                                        <span>{{ forloop.counter }}. What is another name for the Digital Revolution?</span>
+                                <div class="question-accordion" data-question-id="{{ question.id }}">
+                                    <div class="question-header" id="question-header-{{ question.id }}">
                                         <div>
+                                            <span class="fw-bold">Question {{ forloop.counter }}</span>
                                             <span class="answered-badge {% if question.user_answer.answer and question.user_answer.answer != '' %}visible{% endif %}">Answered</span>
                                             <span class="review-badge {% if question.user_answer.marked_for_review %}visible{% endif %}">Review</span>
                                         </div>
+                                        <i class="bi bi-chevron-down chevron-icon"></i>
                                     </div>
-                                    <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
-                                        <p>{{ question.text }}</p>
-                                        
-                                        {% if question.question_type == 'multiple_choice' %}
-                                            {% for option in question.options.all %}
-                                            <div class="form-check">
-                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
-                                                {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
-                                                <label class="form-check-label" for="option_{{ option.id }}">
-                                                    {{ option.text }}
-                                                </label>
-                                            </div>
-                                            {% endfor %}
-                                        {% elif question.question_type == 'true_false' %}
-                                            <div class="form-check">
-                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
-                                                {% if question.user_answer.answer == "true" %}checked{% endif %}>
-                                                <label class="form-check-label" for="true_{{ question.id }}">
-                                                    True
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
-                                                {% if question.user_answer.answer == "false" %}checked{% endif %}>
-                                                <label class="form-check-label" for="false_{{ question.id }}">
-                                                    False
-                                                </label>
-                                            </div>
-                                        {% else %}
-                                            <div class="form-group">
-                                                <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{{ question.user_answer.answer }}</textarea>
-                                            </div>
-                                        {% endif %}
+                                    <div class="question-body" id="question-body-{{ question.id }}">
+                                        <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
+                                            <p>{{ question.text }}</p>
+                                            
+                                            {% if question.question_type == 'multiple_choice' %}
+                                                {% for option in question.options.all %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
+                                                    {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
+                                                    <label class="form-check-label" for="option_{{ option.id }}">
+                                                        {{ option.text }}
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                            {% elif question.question_type == 'true_false' %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
+                                                    {% if question.user_answer.answer == "true" %}checked{% endif %}>
+                                                    <label class="form-check-label" for="true_{{ question.id }}">
+                                                        True
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
+                                                    {% if question.user_answer.answer == "false" %}checked{% endif %}>
+                                                    <label class="form-check-label" for="false_{{ question.id }}">
+                                                        False
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                <div class="form-group">
+                                                    <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{{ question.user_answer.answer }}</textarea>
+                                                </div>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
@@ -443,7 +474,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const timerEl = document.getElementById('timer');
-            const questionItems = document.querySelectorAll('.question-item');
+            const questionAccordions = document.querySelectorAll('.question-accordion');
             const navigationBtns = document.querySelectorAll('.question-nav-btn');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
@@ -475,26 +506,61 @@
                 }
             }, 1000);
 
+            // Toggle question accordion
+            questionAccordions.forEach((accordion, index) => {
+                const header = accordion.querySelector('.question-header');
+                const body = accordion.querySelector('.question-body');
+                const chevron = header.querySelector('.chevron-icon');
+                
+                header.addEventListener('click', () => {
+                    // Toggle the current accordion
+                    const isOpen = body.classList.contains('open');
+                    
+                    if (isOpen) {
+                        // Close this accordion
+                        body.classList.remove('open');
+                        chevron.classList.remove('open');
+                    } else {
+                        // Open this accordion
+                        body.classList.add('open');
+                        chevron.classList.add('open');
+                    }
+                    
+                    // Update current question index for navigation
+                    currentQuestionIndex = index;
+                    
+                    // Update the review checkbox in navigation based on current question's review status
+                    updateNavigationCheckbox(index);
+                    
+                    // Highlight the corresponding navigation button
+                    updateNavigationHighlight(index);
+                });
+            });
+            
             // Show a specific question and scroll to it
             function showQuestion(index) {
-                if (index < 0 || index >= questionItems.length) return;
+                if (index < 0 || index >= questionAccordions.length) return;
                 
-                // Remove active class from all questions
-                questionItems.forEach(item => item.classList.remove('active'));
+                const targetAccordion = questionAccordions[index];
+                const targetHeader = targetAccordion.querySelector('.question-header');
+                const targetBody = targetAccordion.querySelector('.question-body');
+                const targetChevron = targetHeader.querySelector('.chevron-icon');
                 
-                // Add active class to the target question
-                const targetQuestion = questionItems[index];
-                targetQuestion.classList.add('active');
+                // Open the target accordion if it's not already open
+                if (!targetBody.classList.contains('open')) {
+                    targetBody.classList.add('open');
+                    targetChevron.classList.add('open');
+                }
                 
-                // Scroll to the target question
-                targetQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Scroll to the target accordion
+                targetAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 
                 // Update current question index
                 currentQuestionIndex = index;
                 
                 // Update navigation button states
                 prevBtn.disabled = index === 0;
-                nextBtn.disabled = index === questionItems.length - 1;
+                nextBtn.disabled = index === questionAccordions.length - 1;
                 
                 // Update the review checkbox in navigation based on current question's review status
                 updateNavigationCheckbox(index);
@@ -506,17 +572,7 @@
             // Update navigation highlight
             function updateNavigationHighlight(index) {
                 navigationBtns.forEach((btn, btnIndex) => {
-                    // Remove active class from all buttons
                     btn.classList.remove('active');
-                    
-                    // For each button that is not the current one and not answered
-                    if (btnIndex !== index && !btn.classList.contains('answered')) {
-                        // Make sure it has the btn-outline-primary class (blue border, blue text, white background)
-                        btn.classList.add('btn-outline-primary');
-                        btn.classList.remove('btn-primary');
-                    }
-                    
-                    // Set the active class for the current question
                     if (btnIndex === index) {
                         btn.classList.add('active');
                     }
@@ -525,22 +581,15 @@
             
             // Update navigation checkbox based on question review status
             function updateNavigationCheckbox(index) {
-                const questionId = questionItems[index].dataset.questionId;
-                const questionItem = questionItems[index];
-                const reviewBadge = questionItem.querySelector('.review-badge');
+                const questionId = questionAccordions[index].dataset.questionId;
+                const accordion = questionAccordions[index];
+                const reviewBadge = accordion.querySelector('.review-badge');
                 navReviewCheckbox.checked = reviewBadge.classList.contains('visible');
             }
             
             // Navigation button event listeners
             navigationBtns.forEach((btn, index) => {
                 btn.addEventListener('click', () => {
-                    showQuestion(index);
-                });
-            });
-            
-            // Question item click event listeners
-            questionItems.forEach((item, index) => {
-                item.addEventListener('click', () => {
                     showQuestion(index);
                 });
             });
@@ -554,7 +603,7 @@
             
             // Next button event listener
             nextBtn.addEventListener('click', () => {
-                if (currentQuestionIndex < questionItems.length - 1) {
+                if (currentQuestionIndex < questionAccordions.length - 1) {
                     showQuestion(currentQuestionIndex + 1);
                 }
             });
@@ -602,18 +651,6 @@
                             saveAnswer(input);
                         }
                     });
-                    
-                    // Add focus event to update navigation when clicking on a radio button
-                    input.addEventListener('focus', () => {
-                        // Find the question item and its index
-                        const questionItem = input.closest('.question-item');
-                        if (questionItem) {
-                            const index = Array.from(questionItems).indexOf(questionItem);
-                            if (index !== -1) {
-                                showQuestion(index);
-                            }
-                        }
-                    });
                 } else {
                     // For other inputs like textareas
                     input.addEventListener('change', () => {
@@ -629,30 +666,18 @@
                         input.addEventListener('blur', () => {
                             saveAnswer(input);
                         });
-                        
-                        // Add focus event to update navigation when clicking in a textarea
-                        input.addEventListener('focus', () => {
-                            // Find the question item and its index
-                            const questionItem = input.closest('.question-item');
-                            if (questionItem) {
-                                const index = Array.from(questionItems).indexOf(questionItem);
-                                if (index !== -1) {
-                                    showQuestion(index);
-                                }
-                            }
-                        });
                     }
                 }
             });
             
             // Navigation review checkbox event listener
             navReviewCheckbox.addEventListener('change', () => {
-                const currentItem = questionItems[currentQuestionIndex];
-                const questionId = currentItem.dataset.questionId;
+                const currentAccordion = questionAccordions[currentQuestionIndex];
+                const questionId = currentAccordion.dataset.questionId;
                 const markForReview = navReviewCheckbox.checked;
                 
                 // Update the review badge
-                const reviewBadge = currentItem.querySelector('.review-badge');
+                const reviewBadge = currentAccordion.querySelector('.review-badge');
                 if (markForReview) {
                     reviewBadge.classList.add('visible');
                 } else {
@@ -661,7 +686,7 @@
                 
                 // Get the answer value from the current question
                 let answerValue = '';
-                const container = currentItem.querySelector('.question-container');
+                const container = currentAccordion.querySelector('.question-container');
                 
                 const radioInputs = container.querySelectorAll('input[type="radio"]:checked');
                 if (radioInputs.length > 0) {
@@ -699,13 +724,14 @@
             function saveAnswerForContainer(container, answerValue) {
                 const questionId = container.dataset.questionId;
                 
-                // Find the question item this answer belongs to
-                const questionItem = container.closest('.question-item');
-                const answeredBadge = questionItem.querySelector('.answered-badge');
+                // Find the accordion this answer belongs to
+                const accordion = container.closest('.question-accordion');
+                const header = accordion.querySelector('.question-header');
+                const answeredBadge = accordion.querySelector('.answered-badge');
                 
                 // Find which index this question is
-                const questionIndex = Array.from(questionItems).findIndex(
-                    item => item.dataset.questionId === questionId
+                const questionIndex = Array.from(questionAccordions).findIndex(
+                    accord => accord.dataset.questionId === questionId
                 );
                 
                 if (questionIndex > -1) {
@@ -713,30 +739,33 @@
                     if (answerValue && answerValue.trim() !== '') {
                         // Mark the corresponding nav button as answered
                         navigationBtns[questionIndex].classList.add('answered');
-                        navigationBtns[questionIndex].classList.remove('btn-outline-primary');
                         
-                        // Update the question item to show it's answered
-                        questionItem.classList.add('answered');
+                        // Update the question header to show it's answered
+                        header.classList.add('answered');
                         
                         // Show the answered badge
                         answeredBadge.classList.add('visible');
+                        
+                        // Remove bootstrap classes that would override our custom styling
+                        navigationBtns[questionIndex].classList.remove('btn-outline-primary');
                     } else {
                         // Remove answered class if answer is empty
                         navigationBtns[questionIndex].classList.remove('answered');
                         
-                        // Update the question item to show it's not answered
-                        questionItem.classList.remove('answered');
+                        // Update the question header to show it's not answered
+                        header.classList.remove('answered');
                         
                         // Hide the answered badge
                         answeredBadge.classList.remove('visible');
                         
-                        // Always restore btn-outline-primary styling for unanswered questions
-                        // This ensures blue borders, blue text, and white background
-                        navigationBtns[questionIndex].classList.add('btn-outline-primary');
-                        
-                        // Only remove btn-primary if it's not the active question
+                        // Restore original styling by adding btn-outline-primary
+                        // (but not if it's the currently active question)
                         if (questionIndex !== currentQuestionIndex) {
-                            navigationBtns[questionIndex].classList.remove('btn-primary');
+                            navigationBtns[questionIndex].classList.add('btn-outline-primary');
+                        } else {
+                            // For active question that's now unanswered
+                            navigationBtns[questionIndex].classList.add('btn-primary');
+                            navigationBtns[questionIndex].classList.remove('btn-outline-primary');
                         }
                     }
                 }
@@ -747,7 +776,7 @@
                     markForReview = navReviewCheckbox.checked;
                 } else {
                     // For other questions, maintain their current review status
-                    const reviewBadge = questionItem.querySelector('.review-badge');
+                    const reviewBadge = accordion.querySelector('.review-badge');
                     markForReview = reviewBadge.classList.contains('visible');
                 }
                 
@@ -785,9 +814,9 @@
             {% for question in questions %}
                 // Find the navigation button for this question
                 const navButton{{ forloop.counter }} = document.querySelector(`.question-nav-btn[data-question-id="{{ question.id }}"]`);
-                const questionItem{{ forloop.counter }} = document.querySelector(`#question-item-{{ question.id }}`);
+                const questionHeader{{ forloop.counter }} = document.querySelector(`#question-header-{{ question.id }}`);
                 
-                if (navButton{{ forloop.counter }} && questionItem{{ forloop.counter }}) {
+                if (navButton{{ forloop.counter }} && questionHeader{{ forloop.counter }}) {
                     {% if question.user_answer.marked_for_review %}
                         navButton{{ forloop.counter }}.classList.add('review');
                     {% endif %}
@@ -796,37 +825,23 @@
                     {% if question.user_answer.answer and question.user_answer.answer != "" %}
                         navButton{{ forloop.counter }}.classList.add('answered');
                         navButton{{ forloop.counter }}.classList.remove('btn-outline-primary');
-                        questionItem{{ forloop.counter }}.classList.add('answered');
+                        questionHeader{{ forloop.counter }}.classList.add('answered');
                     {% endif %}
                 }
             {% endfor %}
-            
-            // Handle document-level click events to ensure only one active question
-            document.addEventListener('click', function(e) {
-                // Ignore clicks on navigation elements that handle their own navigation
-                if (e.target.classList.contains('question-nav-btn') || 
-                    e.target.id === 'prevBtn' || 
-                    e.target.id === 'nextBtn' || 
-                    e.target.closest('.question-container')) {
-                    return;
-                }
-                
-                // For clicks on question items, handle in their own event listener
-                if (e.target.closest('.question-item')) {
-                    return;
-                }
-                
-                // For other clicks (outside of nav or question elements), keep current question
-                updateNavigationHighlight(currentQuestionIndex);
-            });
             
             // Mark previously checked radio buttons
             document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
                 radio.setAttribute('data-previously-checked', 'true');
             });
             
-            // Initialize: Highlight the first question by default
-            questionItems[0].classList.add('active');
+            // Initialize: Open the first question by default
+            const firstBody = questionAccordions[0].querySelector('.question-body');
+            const firstChevron = questionAccordions[0].querySelector('.chevron-icon');
+            if (firstBody && firstChevron) {
+                firstBody.classList.add('open');
+                firstChevron.classList.add('open');
+            }
             
             // Update the navigation highlight for the first question
             updateNavigationHighlight(0);

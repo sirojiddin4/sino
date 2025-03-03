@@ -1,12 +1,11 @@
 {% load static %}
-{% load template_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sino - AI IELTS Tutor - Full Test</title>
+    <title>Sino - AI IELTS Tutor - Practice</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom CSS -->
@@ -96,7 +95,7 @@
             overflow-x: auto;
             margin: 0 10px;
             padding: 0 5px;
-            max-width: 85%;
+            max-width: 75%;
         }
 
         /* Mobile responsiveness for navigation buttons */
@@ -261,118 +260,10 @@
         .custom-context-menu {
             user-select: none;
         }
-        
-        /* Show/hide passage content based on active passage */
-        .passage-content {
-            display: none;
-        }
-        
-        .passage-content.active {
-            display: block;
-        }
-        
-        /* Progress indicator for passages */
-        .passage-progress {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-        }
-        
-        .passage-progress-item {
-            flex: 1;
-            text-align: center;
-            padding: 5px;
-            background-color: #e9ecef;
-            border-radius: 4px;
-            margin: 0 3px;
-            font-size: 0.85rem;
-            position: relative;
-        }
-        
-        .passage-progress-item.completed {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        
-        .passage-progress-item.active {
-            background-color: #cfe2ff;
-            color: #084298;
-            font-weight: bold;
-        }
-        
-        .passage-progress-item::after {
-            content: "";
-            position: absolute;
-            right: -10px;
-            top: 50%;
-            transform: translateY(-50%);
-            border-width: 5px 0 5px 5px;
-            border-style: solid;
-            border-color: transparent transparent transparent #e9ecef;
-        }
-        
-        .passage-progress-item.completed::after {
-            border-color: transparent transparent transparent #d4edda;
-        }
-        
-        .passage-progress-item.active::after {
-            border-color: transparent transparent transparent #cfe2ff;
-        }
-        
-        .passage-progress-item:last-child::after {
-            display: none;
-        }
-        
-        /* Question group dividers */
-        .question-group-divider {
-            display: flex;
-            align-items: center;
-            margin: 5px 0;
-        }
-        
-        .question-group-divider::before,
-        .question-group-divider::after {
-            content: "";
-            flex-grow: 1;
-            height: 1px;
-            background-color: #dee2e6;
-            margin: 0 10px;
-        }
-        
-        /* Passage indicator badge */
-        .passage-indicator {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 0.65rem;
-            font-weight: bold;
-            z-index: 10;
-        }
-        
-        .passage-indicator-1 {
-            background-color: #28a745;
-            color: white;
-        }
-        
-        .passage-indicator-2 {
-            background-color: #fd7e14;
-            color: white;
-        }
-        
-        .passage-indicator-3 {
-            background-color: #007bff;
-            color: white;
-        }
     </style>
 </head>
 <body>
-    <div class="container-fluid px-0" style="height:720vh; overflow-y: hidden;">
+    <div class="container-fluid px-0" style="height:100vh; overflow-y: hidden;">
         <!-- Main content starts here -->
         <div class="container-fluid mb-5 main-content">
             <!-- Header with User's Name, Timer, and Part Information -->
@@ -382,7 +273,7 @@
                         <span class="fw-bold">{{ request.user.username }}</span>
                     </div>
                     <div>
-                        <span id="passage-header-text">IELTS Reading Passage {{ current_passage_number }}</span>
+                        <span>IELTS Reading Practice</span>
                     </div>
                 </div>
                 <div class="col-6 text-end">
@@ -396,24 +287,17 @@
                 </div>
             </div>
             
-
-            
             <div class="row">
                 <!-- Reading Passage -->
                 <div class="col-md-6" style="height:72vh;">
                     <div class="card mb-3">
                         <div class="card-body">
-                            <!-- All Passages Content -->
-                            {% for p in test_passages %}
-                                <div class="passage-content" id="passage-content-{{ p.passage_number }}" data-passage-number="{{ p.passage_number }}">
-                                    <div class="reading-passage-container" style="height: 75vh; overflow-y: auto;">
-                                        <h4 class="mb-3">{{ p.title }}</h4>
-                                        <div class="reading-passage">
-                                            {{ p.content|linebreaks }}
-                                        </div>
-                                    </div>
+                            <div class="reading-passage-container" style="height: 75vh; overflow-y: auto;">
+                                <h4 class="mb-3">{{ passage.title }}</h4>
+                                <div class="reading-passage">
+                                    {{ passage.content|linebreaks }}
                                 </div>
-                            {% endfor %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -422,99 +306,71 @@
                 <div class="col-md-6" style="height:72vh;">
                     <div class="card">
                         <div class="card-body p-2">
-                            <!-- All Questions Container -->
-                            <div class="questions-container" id="all-questions-container">
-                                {% for p in test_passages %}
-                                    <div class="passage-content" id="questions-content-{{ p.passage_number }}" data-passage-number="{{ p.passage_number }}">
-                                        {% with p_questions=p.questions.all %}
-                                        {% for question in p_questions %}
-                                        <div class="question-item" 
-                                             data-question-id="{{ question.id }}" 
-                                             id="question-item-{{ question.id }}"
-                                             data-passage-number="{{ p.passage_number }}"
-                                             data-order-number="{{ question.order_number }}">
-                                            <div class="question-title">
-                                                <span>
-                                                    <span class="passage-indicator passage-indicator-{{ p.passage_number }}">{{ p.passage_number }}</span>
-                                                    {{ question.order_number }}. {{ question.text }}
-                                                </span>
-                                                <div>
-                                                    {% with user_answer=user_answers|get_item:question.id %}
-                                                    <span class="answered-badge {% if user_answer.answer and user_answer.answer != '' %}visible{% endif %}">Answered</span>
-                                                    <span class="review-badge {% if user_answer.marked_for_review %}visible{% endif %}">Review</span>
-                                                    {% endwith %}
-                                                </div>
-                                            </div>
-                                            <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
-                                                {% if question.question_type == 'multiple_choice' %}
-                                                    {% for option in question.options.all %}
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="option_{{ option.id }}">
-                                                            {{ option.text }}
-                                                        </label>
-                                                    </div>
-                                                    {% endfor %}
-                                                {% elif question.question_type == 'true_false' %}
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == "true" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="true_{{ question.id }}">
-                                                            True
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == "false" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="false_{{ question.id }}">
-                                                            False
-                                                        </label>
-                                                    </div>
-                                                {% elif question.question_type == 'true_false_not_given' %}
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="TRUE" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == "TRUE" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="true_{{ question.id }}">
-                                                            TRUE
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="FALSE" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == "FALSE" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="false_{{ question.id }}">
-                                                            FALSE
-                                                        </label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="notgiven_{{ question.id }}" value="NOT GIVEN" 
-                                                        {% with user_answer=user_answers|get_item:question.id %}
-                                                        {% if user_answer.answer == "NOT GIVEN" %}checked{% endif %}
-                                                        {% endwith %}>
-                                                        <label class="form-check-label" for="notgiven_{{ question.id }}">
-                                                            NOT GIVEN
-                                                        </label>
-                                                    </div>
-                                                {% else %}
-                                                    <div class="form-group">
-                                                        <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{% with user_answer=user_answers|get_item:question.id %}{{ user_answer.answer }}{% endwith %}</textarea>
-                                                    </div>
-                                                {% endif %}
-                                            </div>
+                            <div class="questions-container">
+                                {% for question in questions %}
+                                <div class="question-item {% if forloop.first %}active{% endif %}" data-question-id="{{ question.id }}" id="question-item-{{ question.id }}">
+                                    <div class="question-title">
+                                        <span>{{ question.order_number }}. {{ question.text }}</span>
+                                        <div>
+                                            <span class="answered-badge {% if question.user_answer.answer and question.user_answer.answer != '' %}visible{% endif %}">Answered</span>
+                                            <span class="review-badge {% if question.user_answer.marked_for_review %}visible{% endif %}">Review</span>
                                         </div>
-                                        {% endfor %}
-                                        {% endwith %}
                                     </div>
+                                    <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
+                                        {% if question.question_type == 'multiple_choice' %}
+                                            {% for option in question.options.all %}
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" 
+                                                {% if question.user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}>
+                                                <label class="form-check-label" for="option_{{ option.id }}">
+                                                    {{ option.text }}
+                                                </label>
+                                            </div>
+                                            {% endfor %}
+                                        {% elif question.question_type == 'true_false' %}
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="true" 
+                                                {% if question.user_answer.answer == "true" %}checked{% endif %}>
+                                                <label class="form-check-label" for="true_{{ question.id }}">
+                                                    True
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="false" 
+                                                {% if question.user_answer.answer == "false" %}checked{% endif %}>
+                                                <label class="form-check-label" for="false_{{ question.id }}">
+                                                    False
+                                                </label>
+                                            </div>
+                                        {% elif question.question_type == 'true_false_not_given' %}
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="true_{{ question.id }}" value="TRUE" 
+                                                {% if question.user_answer.answer == "TRUE" %}checked{% endif %}>
+                                                <label class="form-check-label" for="true_{{ question.id }}">
+                                                    TRUE
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="false_{{ question.id }}" value="FALSE" 
+                                                {% if question.user_answer.answer == "FALSE" %}checked{% endif %}>
+                                                <label class="form-check-label" for="false_{{ question.id }}">
+                                                    FALSE
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input answer-input" type="radio" name="question_{{ question.id }}" id="notgiven_{{ question.id }}" value="NOT GIVEN" 
+                                                {% if question.user_answer.answer == "NOT GIVEN" %}checked{% endif %}>
+                                                <label class="form-check-label" for="notgiven_{{ question.id }}">
+                                                    NOT GIVEN
+                                                </label>
+                                            </div>
+                                        {% else %}
+                                            <div class="form-group">
+                                                <textarea class="form-control answer-input" id="answer_{{ question.id }}" rows="3" placeholder="Enter your answer here...">{{ question.user_answer.answer }}</textarea>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                                 {% endfor %}
                             </div>
                         </div>
@@ -539,20 +395,13 @@
                                 </div>
                             </div>
                             
-                            <!-- Question Navigation Buttons (All 40 buttons) -->
+                            <!-- Question Navigation Buttons -->
                             <div class="questions-nav-container">
                                 <div class="d-flex flex-wrap">
-                                    {% for p in test_passages %}
-                                        {% with p_questions=p.questions.all %}
-                                        {% for question in p_questions %}
-                                            <button class="btn btn-outline-primary question-nav-btn" 
-                                                   data-question-id="{{ question.id }}"
-                                                   data-passage-number="{{ p.passage_number }}"
-                                                   data-order-number="{{ question.order_number }}">
-                                                {{ question.order_number }}
-                                            </button>
-                                        {% endfor %}
-                                        {% endwith %}
+                                    {% for question in questions %}
+                                        <button class="btn btn-outline-primary question-nav-btn" data-question-id="{{ question.id }}">
+                                            {{ question.order_number }}
+                                        </button>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -561,7 +410,7 @@
                             <div class="navigation-controls">
                                 <button class="btn btn-secondary btn-sm me-1" id="prevBtn">← Prev</button>
                                 <button class="btn btn-secondary btn-sm me-1" id="nextBtn">Next →</button>
-                                <button class="btn btn-primary btn-sm" id="submitBtn">Submit Test</button>
+                                <button class="btn btn-primary btn-sm" id="submitBtn">Submit</button>
                             </div>
                         </div>
                     </div>
@@ -578,11 +427,11 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        Are you sure you want to submit your test? You won't be able to make changes to any passages after submission.
+                        Are you sure you want to submit your practice? You won't be able to make changes after submission.
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <a href="{% url 'submit_test' session.id %}" class="btn btn-primary">Submit Test</a>
+                        <a href="{% url 'submit_test' session.id %}" class="btn btn-primary">Submit Practice</a>
                     </div>
                 </div>
             </div>
@@ -602,15 +451,11 @@
             const submitBtn = document.getElementById('submitBtn');
             const answerInputs = document.querySelectorAll('.answer-input');
             const navReviewCheckbox = document.getElementById('nav_review_checkbox');
-            const passageProgressItems = document.querySelectorAll('.passage-progress-item');
-            const passageContents = document.querySelectorAll('.passage-content');
-            const passageHeaderText = document.getElementById('passage-header-text');
             
             // Set up CSRF token for AJAX requests
             const csrfToken = "{{ csrf_token }}";
             
             let currentQuestionIndex = 0;
-            let currentPassageNumber = {{ current_passage_number }};
             let remainingSeconds = parseInt(timerEl.dataset.remaining);
             
             // Update timer every second
@@ -629,145 +474,92 @@
                     timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
                 }
             }, 1000);
-            
-            // Function to change the current passage
-            function changePassage(passageNumber) {
-                // Update current passage number
-                currentPassageNumber = passageNumber;
-                
-                // Update passage header text
-                passageHeaderText.textContent = `IELTS Reading Passage ${passageNumber}`;
-                
-                // Update passage progress indicator
-                passageProgressItems.forEach(item => {
-                    const itemPassageNumber = parseInt(item.dataset.passageNumber);
-                    item.classList.remove('active', 'completed');
-                    
-                    if (itemPassageNumber < passageNumber) {
-                        item.classList.add('completed');
-                    } else if (itemPassageNumber === passageNumber) {
-                        item.classList.add('active');
-                    }
-                });
-                
-                // Update passage content visibility
-                passageContents.forEach(content => {
-                    content.classList.remove('active');
-                    if (parseInt(content.dataset.passageNumber) === passageNumber) {
-                        content.classList.add('active');
-                    }
-                });
-            }
-            
-            // Get current visible question items
-            function getVisibleQuestionItems() {
-                const allQuestions = Array.from(questionItems);
-                // Sort by order number to ensure proper navigation
-                return allQuestions.sort((a, b) => {
-                    return parseInt(a.dataset.orderNumber) - parseInt(b.dataset.orderNumber);
-                });
-            }
-            
-            // Function to show a specific question
-            function showQuestion(orderNumber, scrollToQuestion = true) {
-                // Find the question item with the specified order number
-                const allQuestions = getVisibleQuestionItems();
-                
-                // Find the question index in the sorted array
-                const questionIndex = allQuestions.findIndex(q => parseInt(q.dataset.orderNumber) === orderNumber);
-                
-                if (questionIndex === -1) return;
-                
-                // Get the question element
-                const targetQuestion = allQuestions[questionIndex];
-                const passageNumber = parseInt(targetQuestion.dataset.passageNumber);
-                
-                // Change passage if needed
-                if (passageNumber !== currentPassageNumber) {
-                    changePassage(passageNumber);
-                }
+
+            // Show a specific question and scroll to it
+            function showQuestion(index) {
+                if (index < 0 || index >= questionItems.length) return;
                 
                 // Remove active class from all questions
                 questionItems.forEach(item => item.classList.remove('active'));
                 
-                // Add active class to target question
+                // Add active class to the target question
+                const targetQuestion = questionItems[index];
                 targetQuestion.classList.add('active');
                 
-                // Scroll to the question if requested
-                if (scrollToQuestion) {
-                    targetQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+                // Scroll to the target question
+                targetQuestion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Update current question index
+                currentQuestionIndex = index;
                 
                 // Update navigation button states
-                prevBtn.disabled = questionIndex === 0;
-                nextBtn.disabled = questionIndex === allQuestions.length - 1;
+                prevBtn.disabled = index === 0;
+                nextBtn.disabled = index === questionItems.length - 1;
                 
-                // Update the navigation checkbox
-                updateNavigationCheckbox(targetQuestion);
+                // Update the review checkbox in navigation based on current question's review status
+                updateNavigationCheckbox(index);
                 
-                // Update navigation highlighting
-                updateNavigationHighlight(orderNumber);
-                
-                // Store the current question index for next/prev navigation
-                currentQuestionIndex = questionIndex;
+                // Highlight the corresponding navigation button
+                updateNavigationHighlight(index);
             }
             
             // Update navigation highlight
-            function updateNavigationHighlight(orderNumber) {
-                navigationBtns.forEach(btn => {
+            function updateNavigationHighlight(index) {
+                navigationBtns.forEach((btn, btnIndex) => {
                     // Remove active class from all buttons
                     btn.classList.remove('active');
                     
-                    // Set active class for the current question button
-                    if (parseInt(btn.dataset.orderNumber) === orderNumber) {
+                    // For each button that is not the current one and not answered
+                    if (btnIndex !== index && !btn.classList.contains('answered')) {
+                        // Make sure it has the btn-outline-primary class
+                        btn.classList.add('btn-outline-primary');
+                        btn.classList.remove('btn-primary');
+                    }
+                    
+                    // Set the active class for the current question
+                    if (btnIndex === index) {
                         btn.classList.add('active');
                     }
                 });
             }
             
             // Update navigation checkbox based on question review status
-            function updateNavigationCheckbox(questionElement) {
-                const reviewBadge = questionElement.querySelector('.review-badge');
+            function updateNavigationCheckbox(index) {
+                const questionItem = questionItems[index];
+                const reviewBadge = questionItem.querySelector('.review-badge');
                 navReviewCheckbox.checked = reviewBadge.classList.contains('visible');
             }
             
-            // Initialize: Show the first question
-            function initializeView() {
-                // First make sure the first passage is active
-                changePassage(currentPassageNumber);
-                
-                // Show the first question or the last viewed question if available
-                const initialQuestionOrder = 1; // Default to first question
-                showQuestion(initialQuestionOrder, true);
-            }
-            
-            // Question navigation button event listeners
-            navigationBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const orderNumber = parseInt(this.dataset.orderNumber);
-                    showQuestion(orderNumber, true);
+            // Navigation button event listeners
+            navigationBtns.forEach((btn, index) => {
+                btn.addEventListener('click', () => {
+                    showQuestion(index);
                 });
             });
             
-            // Previous and Next button event listeners
-            prevBtn.addEventListener('click', function() {
+            // Question item click event listeners
+            questionItems.forEach((item, index) => {
+                item.addEventListener('click', () => {
+                    showQuestion(index);
+                });
+            });
+            
+            // Previous button event listener
+            prevBtn.addEventListener('click', () => {
                 if (currentQuestionIndex > 0) {
-                    const allQuestions = getVisibleQuestionItems();
-                    const prevQuestion = allQuestions[currentQuestionIndex - 1];
-                    showQuestion(parseInt(prevQuestion.dataset.orderNumber), true);
+                    showQuestion(currentQuestionIndex - 1);
                 }
             });
             
-            nextBtn.addEventListener('click', function() {
-                const allQuestions = getVisibleQuestionItems();
-                if (currentQuestionIndex < allQuestions.length - 1) {
-                    const nextQuestion = allQuestions[currentQuestionIndex + 1];
-                    showQuestion(parseInt(nextQuestion.dataset.orderNumber), true);
+            // Next button event listener
+            nextBtn.addEventListener('click', () => {
+                if (currentQuestionIndex < questionItems.length - 1) {
+                    showQuestion(currentQuestionIndex + 1);
                 }
             });
             
             // Submit button event listener
-            submitBtn.addEventListener('click', function() {
+            submitBtn.addEventListener('click', () => {
                 const submitModal = new bootstrap.Modal(document.getElementById('submitModal'));
                 submitModal.show();
             });
@@ -812,11 +604,13 @@
                     
                     // Add focus event to update navigation when clicking on a radio button
                     input.addEventListener('focus', () => {
-                        // Find the question item
+                        // Find the question item and its index
                         const questionItem = input.closest('.question-item');
                         if (questionItem) {
-                            const orderNumber = parseInt(questionItem.dataset.orderNumber);
-                            showQuestion(orderNumber, true);
+                            const index = Array.from(questionItems).indexOf(questionItem);
+                            if (index !== -1) {
+                                showQuestion(index);
+                            }
                         }
                     });
                 } else {
@@ -837,11 +631,13 @@
                         
                         // Add focus event to update navigation when clicking in a textarea
                         input.addEventListener('focus', () => {
-                            // Find the question item
+                            // Find the question item and its index
                             const questionItem = input.closest('.question-item');
                             if (questionItem) {
-                                const orderNumber = parseInt(questionItem.dataset.orderNumber);
-                                showQuestion(orderNumber, true);
+                                const index = Array.from(questionItems).indexOf(questionItem);
+                                if (index !== -1) {
+                                    showQuestion(index);
+                                }
                             }
                         });
                     }
@@ -850,13 +646,12 @@
             
             // Navigation review checkbox event listener
             navReviewCheckbox.addEventListener('change', () => {
-                const allQuestions = getVisibleQuestionItems();
-                const currentQuestion = allQuestions[currentQuestionIndex];
-                const questionId = currentQuestion.dataset.questionId;
+                const currentItem = questionItems[currentQuestionIndex];
+                const questionId = currentItem.dataset.questionId;
                 const markForReview = navReviewCheckbox.checked;
                 
                 // Update the review badge
-                const reviewBadge = currentQuestion.querySelector('.review-badge');
+                const reviewBadge = currentItem.querySelector('.review-badge');
                 if (markForReview) {
                     reviewBadge.classList.add('visible');
                 } else {
@@ -865,7 +660,7 @@
                 
                 // Get the answer value from the current question
                 let answerValue = '';
-                const container = currentQuestion.querySelector('.question-container');
+                const container = currentItem.querySelector('.question-container');
                 
                 const radioInputs = container.querySelectorAll('input[type="radio"]:checked');
                 if (radioInputs.length > 0) {
@@ -881,12 +676,7 @@
                 sendAnswerToServer(questionId, answerValue, markForReview);
                 
                 // Update the navigation button appearance for review status
-                const orderNumber = parseInt(currentQuestion.dataset.orderNumber);
-                navigationBtns.forEach(btn => {
-                    if (parseInt(btn.dataset.orderNumber) === orderNumber) {
-                        btn.classList.toggle('review', markForReview);
-                    }
-                });
+                navigationBtns[currentQuestionIndex].classList.toggle('review', markForReview);
             });
             
             // Function to save an answer
@@ -910,39 +700,54 @@
                 
                 // Find the question item this answer belongs to
                 const questionItem = container.closest('.question-item');
-                const orderNumber = parseInt(questionItem.dataset.orderNumber);
                 const answeredBadge = questionItem.querySelector('.answered-badge');
                 
-                // Check if the answer is empty
-                if (answerValue && answerValue.trim() !== '') {
-                    // Update UI to show answered state
-                    questionItem.classList.add('answered');
-                    answeredBadge.classList.add('visible');
-                    
-                    // Update navigation button
-                    navigationBtns.forEach(btn => {
-                        if (parseInt(btn.dataset.orderNumber) === orderNumber) {
-                            btn.classList.add('answered');
-                            btn.classList.remove('btn-outline-primary');
+                // Find which index this question is
+                const questionIndex = Array.from(questionItems).findIndex(
+                    item => item.dataset.questionId === questionId
+                );
+                
+                if (questionIndex > -1) {
+                    // Check if the answer is empty
+                    if (answerValue && answerValue.trim() !== '') {
+                        // Mark the corresponding nav button as answered
+                        navigationBtns[questionIndex].classList.add('answered');
+                        navigationBtns[questionIndex].classList.remove('btn-outline-primary');
+                        
+                        // Update the question item to show it's answered
+                        questionItem.classList.add('answered');
+                        
+                        // Show the answered badge
+                        answeredBadge.classList.add('visible');
+                    } else {
+                        // Remove answered class if answer is empty
+                        navigationBtns[questionIndex].classList.remove('answered');
+                        
+                        // Update the question item to show it's not answered
+                        questionItem.classList.remove('answered');
+                        
+                        // Hide the answered badge
+                        answeredBadge.classList.remove('visible');
+                        
+                        // Always restore btn-outline-primary styling for unanswered questions
+                        navigationBtns[questionIndex].classList.add('btn-outline-primary');
+                        
+                        // Only remove btn-primary if it's not the active question
+                        if (questionIndex !== currentQuestionIndex) {
+                            navigationBtns[questionIndex].classList.remove('btn-primary');
                         }
-                    });
-                } else {
-                    // Update UI to show unanswered state
-                    questionItem.classList.remove('answered');
-                    answeredBadge.classList.remove('visible');
-                    
-                    // Update navigation button
-                    navigationBtns.forEach(btn => {
-                        if (parseInt(btn.dataset.orderNumber) === orderNumber) {
-                            btn.classList.remove('answered');
-                            btn.classList.add('btn-outline-primary');
-                        }
-                    });
+                    }
                 }
                 
-                // Get the review status
-                const reviewBadge = questionItem.querySelector('.review-badge');
-                const markForReview = reviewBadge.classList.contains('visible');
+                // Get the review status from the navigation review checkbox if this is the current question
+                let markForReview = false;
+                if (questionIndex === currentQuestionIndex) {
+                    markForReview = navReviewCheckbox.checked;
+                } else {
+                    // For other questions, maintain their current review status
+                    const reviewBadge = questionItem.querySelector('.review-badge');
+                    markForReview = reviewBadge.classList.contains('visible');
+                }
                 
                 // Send the data to the server
                 sendAnswerToServer(questionId, answerValue || '', markForReview);
@@ -974,46 +779,31 @@
                 });
             }
             
+            // Initialize review markers and answered questions
+            function initializeQuestionMarkers() {
+                questionItems.forEach((item, index) => {
+                    const answeredBadge = item.querySelector('.answered-badge');
+                    const reviewBadge = item.querySelector('.review-badge');
+                    
+                    if (answeredBadge.classList.contains('visible')) {
+                        item.classList.add('answered');
+                        navigationBtns[index].classList.add('answered');
+                        navigationBtns[index].classList.remove('btn-outline-primary');
+                    }
+                    
+                    if (reviewBadge.classList.contains('visible')) {
+                        navigationBtns[index].classList.add('review');
+                    }
+                });
+            }
+            
             // Mark previously checked radio buttons
             document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
                 radio.setAttribute('data-previously-checked', 'true');
             });
             
-            // Initialize the question markers from user_answers data
-            function initializeQuestionMarkers() {
-                // Set up question item states based on answers
-                questionItems.forEach(item => {
-                    const questionId = item.dataset.questionId;
-                    const orderNumber = parseInt(item.dataset.orderNumber);
-                    const answeredBadge = item.querySelector('.answered-badge');
-                    const reviewBadge = item.querySelector('.review-badge');
-                    
-                    // Check if answer is present
-                    if (answeredBadge.classList.contains('visible')) {
-                        item.classList.add('answered');
-                        
-                        // Update navigation button
-                        navigationBtns.forEach(btn => {
-                            if (parseInt(btn.dataset.orderNumber) === orderNumber) {
-                                btn.classList.add('answered');
-                                btn.classList.remove('btn-outline-primary');
-                            }
-                        });
-                    }
-                    
-                    // Check if marked for review
-                    if (reviewBadge.classList.contains('visible')) {
-                        navigationBtns.forEach(btn => {
-                            if (parseInt(btn.dataset.orderNumber) === orderNumber) {
-                                btn.classList.add('review');
-                            }
-                        });
-                    }
-                });
-            }
-            
-            // Call initialization
-            initializeView();
+            // Initialize: Highlight the first question by default
+            showQuestion(0);
             initializeQuestionMarkers();
         });
     </script>
@@ -1022,7 +812,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Target elements where we want to enable highlighting
-            const readingPassages = document.querySelectorAll('.reading-passage');
+            const readingPassage = document.querySelector('.reading-passage');
             const questionContainers = document.querySelectorAll('.question-container');
             
             // Track highlighted text spans
@@ -1069,10 +859,10 @@
                 return menuItem;
             }
             
-            // Apply context menu to all reading passages
-            readingPassages.forEach(passage => {
-                enableContextMenu(passage);
-            });
+            // Apply context menu to reading passage
+            if (readingPassage) {
+                enableContextMenu(readingPassage);
+            }
             
             // Apply context menu to all question containers
             questionContainers.forEach(container => {

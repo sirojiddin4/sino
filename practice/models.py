@@ -1,29 +1,68 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class Test(models.Model):
+    """Model to store tests consisting of multiple reading passages"""
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.title
+
 class ReadingPassage(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     is_short = models.BooleanField(default=False)
+    # Add passage number (1, 2, or 3) to indicate which IELTS reading passage it is
+    passage_number = models.IntegerField(choices=[(1, 'Passage 1'), (2, 'Passage 2'), (3, 'Passage 3')], default=1)
+    # Add relation to Test
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name='passages', null=True, blank=True)
     
     def __str__(self):
         return self.title
+
+class QuestionType(models.Model):
+    """Model to define different question types and their characteristics"""
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=50, unique=True)
+    frontend_type = models.CharField(max_length=100, help_text="Type of UI component to use in frontend")
+    instructions = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return self.name
+
+class QuestionGroup(models.Model):
+    """Model to group questions based on question types"""
+    title = models.CharField(max_length=200)
+    question_type = models.ForeignKey(QuestionType, on_delete=models.CASCADE, related_name='question_groups')
+    passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='question_groups')
+    
+    def __str__(self):
+        return f"{self.title} - {self.question_type.name}"
 
 class Question(models.Model):
     QUESTION_TYPES = (
         ('multiple_choice', 'Multiple Choice'),
         ('true_false', 'True/False'),
+        ('true_false_not_given', 'True/False/Not Given'),
         ('fill_blank', 'Fill in the Blank'),
         ('short_answer', 'Short Answer'),
     )
     
     passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='questions')
+    question_group = models.ForeignKey(QuestionGroup, on_delete=models.CASCADE, related_name='questions', null=True, blank=True)
     text = models.TextField()
-    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    question_type = models.CharField(max_length=30, choices=QUESTION_TYPES)
     correct_answer = models.TextField()
+    # Add order number to show the question's order
+    order_number = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order_number']
     
     def __str__(self):
-        return f"Question for {self.passage.title}"
+        return f"Question {self.order_number} for {self.passage.title}"
 
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
@@ -35,13 +74,24 @@ class QuestionOption(models.Model):
 
 class PracticeSession(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='practice_sessions')
-    passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE)
+    # For individual passage practice
+    passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, null=True, blank=True)
+    # For full test practice
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, null=True, blank=True, related_name='sessions')
+    current_passage_number = models.IntegerField(default=1)
     start_time = models.DateTimeField(auto_now_add=True)
     end_time = models.DateTimeField(null=True, blank=True)
     score = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
     
     def __str__(self):
-        return f"{self.user.username}'s practice on {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+        if self.test:
+            return f"{self.user.username}'s test {self.test.title} on {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+        else:
+            return f"{self.user.username}'s practice on {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+            
+    @property
+    def is_full_test(self):
+        return self.test is not None
 
 class UserAnswer(models.Model):
     session = models.ForeignKey(PracticeSession, on_delete=models.CASCADE, related_name='user_answers')
@@ -53,7 +103,7 @@ class UserAnswer(models.Model):
     def __str__(self):
         return f"Answer for {self.question}"
 
-# Add these to your existing practice/models.py file
+# Chat models remain unchanged
 
 class ChatConversation(models.Model):
     """Model to store chat conversations between users and coaches"""

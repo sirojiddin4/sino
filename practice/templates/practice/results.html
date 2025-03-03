@@ -7,7 +7,7 @@
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h2>Practice Results</h2>
+                    <h2>{% if is_full_test %}Full Test{% else %}Practice{% endif %} Results</h2>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
@@ -18,8 +18,8 @@
                         <div class="col-md-4">
                             <h3>Correct Answers</h3>
                             <p class="display-1">
-                                {{ user_answers|dictsortreversed:"is_correct"|first }}
-                                <small class="text-muted">/ {{ questions|length }}</small>
+                                {{ correct_count }}
+                                <small class="text-muted">/ {{ total_questions }}</small>
                             </p>
                         </div>
                         <div class="col-md-4">
@@ -32,53 +32,113 @@
                 </div>
             </div>
             
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>Question Breakdown</h3>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Question</th>
-                                    <th>Your Answer</th>
-                                    <th>Correct Answer</th>
-                                    <th>Result</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for answer in user_answers %}
-                                <tr>
-                                    <td>{{ answer.question.text|truncatechars:50 }}</td>
-                                    <td>{{ answer.answer|default:"No answer" }}</td>
-                                    <td>{{ answer.question.correct_answer }}</td>
-                                    <td>
-                                        {% if answer.is_correct %}
-                                            <span class="badge bg-success">Correct</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Incorrect</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            {% if is_full_test %}
+                <!-- Results for each passage in a full test -->
+                {% for passage_data in passages_data %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3>Passage {{ passage_data.passage.passage_number }}: {{ passage_data.passage.title }}</h3>
+                        <div>
+                            <span class="badge bg-primary fs-6">Score: {{ passage_data.score }}</span>
+                            <span class="badge bg-secondary fs-6">{{ passage_data.correct_count }}/{{ passage_data.total_count }} correct</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h4 class="mb-3">Question Breakdown</h4>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Question</th>
+                                        <th>Your Answer</th>
+                                        <th>Correct Answer</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for answer in passage_data.answers %}
+                                    <tr>
+                                        <td>{{ answer.question.order_number }}. {{ answer.question.text|truncatechars:50 }}</td>
+                                        <td>{{ answer.answer|default:"No answer" }}</td>
+                                        <td>{{ answer.question.correct_answer }}</td>
+                                        <td>
+                                            {% if answer.is_correct %}
+                                                <span class="badge bg-success">Correct</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Incorrect</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3>Reading Passage</h3>
-                </div>
-                <div class="card-body">
-                    <h4>{{ passage.title }}</h4>
-                    <div class="reading-passage">
-                        {{ passage.content|linebreaks }}
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>Reading Passage {{ passage_data.passage.passage_number }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <h5>{{ passage_data.passage.title }}</h5>
+                        <div class="reading-passage">
+                            {{ passage_data.passage.content|linebreaks }}
+                        </div>
                     </div>
                 </div>
-            </div>
+                {% endfor %}
+            {% else %}
+                <!-- Results for a single passage practice -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Question Breakdown</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Question</th>
+                                        <th>Your Answer</th>
+                                        <th>Correct Answer</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for answer in user_answers %}
+                                    <tr>
+                                        <td>{{ answer.question.order_number }}. {{ answer.question.text|truncatechars:50 }}</td>
+                                        <td>{{ answer.answer|default:"No answer" }}</td>
+                                        <td>{{ answer.question.correct_answer }}</td>
+                                        <td>
+                                            {% if answer.is_correct %}
+                                                <span class="badge bg-success">Correct</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Incorrect</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>Reading Passage</h3>
+                    </div>
+                    <div class="card-body">
+                        <h4>{{ passage.title }}</h4>
+                        <div class="reading-passage">
+                            {{ passage.content|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
             
             <div class="text-center mb-4">
                 <a href="{% url 'homepage' %}" class="btn btn-primary btn-lg">Return to Homepage</a>

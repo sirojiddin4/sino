@@ -76,73 +76,44 @@ def create_coaches():
     
     print(f"Created {len(coaches_data)} coaches")
 
-def create_question_types():
-    """Create question types with their characteristics"""
+def get_question_types():
+    """Get available question types from the database"""
+    # Get all question types
+    question_types = {}
     
-    # True/False/Not Given question type
-    tfng_type, created = QuestionType.objects.get_or_create(
-        code="tfng",
-        defaults={
-            'name': "True/False/Not Given",
-            'frontend_type': "single_choice_radio",
-            'instructions': "Do the following statements agree with the information given in Reading Passage?\nChoose\n* **TRUE** if the statement agrees with the information\n* **FALSE** if the statement contradicts the information\n* **NOT GIVEN** if there is no information on this."
-        }
-    )
+    # Map to store question types by code
+    for qt in QuestionType.objects.all():
+        question_types[qt.code] = qt
     
-    # Multiple Choice question type
-    mc_type, created = QuestionType.objects.get_or_create(
-        code="mc",
-        defaults={
-            'name': "Multiple Choice",
-            'frontend_type': "single_choice_radio",
-            'instructions': "Choose the correct letter, A, B, C or D."
-        }
-    )
+    # Make sure we have the required question types
+    required_types = [
+        'multiple_choice_single', 'true_false_not_given', 'yes_no_not_given',
+        'sentence_completion', 'multiple_choice_multi', 'short_text_input'
+    ]
     
-    # Short Answer question type
-    sa_type, created = QuestionType.objects.get_or_create(
-        code="sa",
-        defaults={
-            'name': "Short Answer",
-            'frontend_type': "text_input",
-            'instructions': "Answer the following questions using NO MORE THAN THREE WORDS from the passage."
-        }
-    )
+    for code in required_types:
+        if code not in question_types:
+            print(f"Warning: Question type with code '{code}' not found in database")
     
-    # True/False question type
-    tf_type, created = QuestionType.objects.get_or_create(
-        code="tf",
-        defaults={
-            'name': "True/False",
-            'frontend_type': "single_choice_radio",
-            'instructions': "Do the following statements agree with the information given in the passage?\nChoose TRUE if the statement agrees with the information\nChoose FALSE if the statement contradicts the information"
-        }
-    )
-    
-    # Fill in the Blank question type
-    fib_type, created = QuestionType.objects.get_or_create(
-        code="fib",
-        defaults={
-            'name': "Fill in the Blank",
-            'frontend_type': "text_input",
-            'instructions': "Complete the sentences below. Write NO MORE THAN TWO WORDS for each answer."
-        }
-    )
-    
-    print("Created question types")
-    return {
-        'tfng': tfng_type,
-        'mc': mc_type,
-        'sa': sa_type,
-        'tf': tf_type,
-        'fib': fib_type
-    }
+    return question_types
 
 def create_sample_test():
     """Create a sample IELTS Academic Reading test with three passages and 40 questions"""
     
-    # Create question types
-    question_types = create_question_types()
+    # Get question types from database
+    question_types = get_question_types()
+    
+    # Make sure we have at least these key question types
+    mc_type = question_types.get('multiple_choice_single')
+    tfng_type = question_types.get('true_false_not_given')
+    yn_type = question_types.get('yes_no_not_given')
+    sa_type = question_types.get('short_text_input', question_types.get('sentence_completion'))
+    fib_type = question_types.get('sentence_completion')
+    
+    if not all([mc_type, tfng_type, sa_type]):
+        print("Error: Required question types not found in database")
+        print("Make sure to run the populate_question_types.py script first")
+        return
     
     # Create a test
     test, created = Test.objects.get_or_create(
@@ -209,8 +180,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Multiple choice questions (1-4)
     mc_group1 = QuestionGroup.objects.create(
         title="Multiple Choice Questions - Passage 1",
-        question_type=question_types['mc'],
-        passage=passage1
+        question_type=mc_type,
+        passage=passage1,
+        order=1
     )
     
     mc_questions = [
@@ -261,7 +233,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage1,
             question_group=mc_group1,
             text=q_data["text"],
-            question_type="multiple_choice",
             correct_answer="1",  # To be updated after creating options
             order_number=q_data["order_number"]
         )
@@ -282,8 +253,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # TFNG questions (5-9)
     tfng_group1 = QuestionGroup.objects.create(
         title="True/False/Not Given Questions - Passage 1",
-        question_type=question_types['tfng'],
-        passage=passage1
+        question_type=tfng_type,
+        passage=passage1,
+        order=2
     )
     
     tfng_questions = [
@@ -319,7 +291,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage1,
             question_group=tfng_group1,
             text=q_data["text"],
-            question_type="true_false_not_given",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )
@@ -327,8 +298,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Fill in the Blank questions (10-13)
     fib_group1 = QuestionGroup.objects.create(
         title="Fill in the Blank Questions - Passage 1",
-        question_type=question_types['fib'],
-        passage=passage1
+        question_type=fib_type,
+        passage=passage1,
+        order=3
     )
     
     fib_questions = [
@@ -359,7 +331,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage1,
             question_group=fib_group1,
             text=q_data["text"],
-            question_type="fill_blank",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )
@@ -369,8 +340,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Short answer questions (14-18)
     sa_group2 = QuestionGroup.objects.create(
         title="Short Answer Questions - Passage 2",
-        question_type=question_types['sa'],
-        passage=passage2
+        question_type=sa_type,
+        passage=passage2,
+        order=1
     )
     
     sa_questions = [
@@ -406,16 +378,19 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage2,
             question_group=sa_group2,
             text=q_data["text"],
-            question_type="short_answer",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )
     
     # True/False questions (19-22)
+    # If yes_no_not_given exists, use it, otherwise use true_false_not_given
+    tf_type = yn_type if yn_type else tfng_type
+    
     tf_group2 = QuestionGroup.objects.create(
         title="True/False Questions - Passage 2",
-        question_type=question_types['tf'],
-        passage=passage2
+        question_type=tf_type,
+        passage=passage2,
+        order=2
     )
     
     tf_questions = [
@@ -446,7 +421,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage2,
             question_group=tf_group2,
             text=q_data["text"],
-            question_type="true_false",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )
@@ -454,8 +428,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Multiple choice questions (23-26)
     mc_group2 = QuestionGroup.objects.create(
         title="Multiple Choice Questions - Passage 2",
-        question_type=question_types['mc'],
-        passage=passage2
+        question_type=mc_type,
+        passage=passage2,
+        order=3
     )
     
     mc_questions = [
@@ -506,7 +481,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage2,
             question_group=mc_group2,
             text=q_data["text"],
-            question_type="multiple_choice",
             correct_answer="1",  # To be updated after creating options
             order_number=q_data["order_number"]
         )
@@ -529,8 +503,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Multiple choice questions (27-31)
     mc_group3 = QuestionGroup.objects.create(
         title="Multiple Choice Questions - Passage 3",
-        question_type=question_types['mc'],
-        passage=passage3
+        question_type=mc_type,
+        passage=passage3,
+        order=1
     )
     
     mc_questions = [
@@ -591,7 +566,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage3,
             question_group=mc_group3,
             text=q_data["text"],
-            question_type="multiple_choice",
             correct_answer="1",  # To be updated after creating options
             order_number=q_data["order_number"]
         )
@@ -612,8 +586,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # TFNG questions (32-36)
     tfng_group3 = QuestionGroup.objects.create(
         title="True/False/Not Given Questions - Passage 3",
-        question_type=question_types['tfng'],
-        passage=passage3
+        question_type=tfng_type,
+        passage=passage3,
+        order=2
     )
     
     tfng_questions = [
@@ -649,7 +624,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage3,
             question_group=tfng_group3,
             text=q_data["text"],
-            question_type="true_false_not_given",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )
@@ -657,8 +631,9 @@ Despite these innovations, significant challenges remain in ensuring equitable a
     # Short answer questions (37-40)
     sa_group3 = QuestionGroup.objects.create(
         title="Short Answer Questions - Passage 3",
-        question_type=question_types['sa'],
-        passage=passage3
+        question_type=sa_type,
+        passage=passage3,
+        order=3
     )
     
     sa_questions = [
@@ -689,7 +664,6 @@ Despite these innovations, significant challenges remain in ensuring equitable a
             passage=passage3,
             question_group=sa_group3,
             text=q_data["text"],
-            question_type="short_answer",
             correct_answer=q_data["correct_answer"],
             order_number=q_data["order_number"]
         )

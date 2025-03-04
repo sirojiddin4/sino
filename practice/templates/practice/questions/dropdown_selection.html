@@ -1,0 +1,64 @@
+{# Template for dropdown selection questions #}
+{# Used for: identifying_info, matching_features, matching_info, matching_sentence_endings #}
+
+<div class="dropdown-selection-container">
+    <div class="form-group">
+        <select class="form-select answer-input" 
+                id="dropdown_{{ question.id }}"
+                data-question-id="{{ question.id }}">
+            <option value="" {% if not user_answer.answer %}selected{% endif %}>Select your answer</option>
+            
+            {% if question_type.code == 'identifying_info' %}
+                {# Paragraph options (A, B, C, etc.) #}
+                {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                    {% if forloop.counter <= 10 %}  {# Limit to a reasonable number of paragraphs #}
+                    <option value="{{ letter }}" {% if user_answer.answer == letter %}selected{% endif %}>
+                        Paragraph {{ letter }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+                
+            {% elif question_type.code == 'matching_features' or question_type.code == 'matching_info' %}
+                {# Options typically labeled A, B, C, etc. #}
+                {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                    {% if forloop.counter <= 6 %}  {# Typically limited to fewer options #}
+                    <option value="{{ letter }}" {% if user_answer.answer == letter %}selected{% endif %}>
+                        {{ letter }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+                
+            {% elif question_type.code == 'matching_sentence_endings' %}
+                {# Use the actual options if provided, otherwise use placeholders #}
+                {% if question.options.exists %}
+                    {% for option in question.options.all %}
+                    <option value="{{ option.id }}" {% if user_answer.answer == option.id|stringformat:"s" %}selected{% endif %}>
+                        {{ option.text }}
+                    </option>
+                    {% endfor %}
+                {% else %}
+                    {# Fallback options if not in database #}
+                    {% for letter in "ABCDEFG" %}
+                    <option value="{{ letter }}" {% if user_answer.answer == letter %}selected{% endif %}>
+                        Ending {{ letter }}
+                    </option>
+                    {% endfor %}
+                {% endif %}
+            {% endif %}
+        </select>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropdown = document.getElementById('dropdown_{{ question.id }}');
+    
+    if (dropdown) {
+        dropdown.addEventListener('change', function() {
+            // This will trigger the global answer-input event handler in test.js
+            const event = new Event('change');
+            dropdown.dispatchEvent(event);
+        });
+    }
+});
+</script>

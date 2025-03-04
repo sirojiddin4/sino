@@ -1,0 +1,294 @@
+{# Template for drag and drop list questions #}
+{# Used for: summary_labelling #}
+
+{% load template_filters %}
+
+<div class="drag-drop-list-container" id="drag_drop_{{ question.id }}">
+    <div class="row">
+        <!-- Source container with draggable options -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">Available Options</div>
+                <div class="card-body p-2 source-container" id="source_{{ question.id }}">
+                    {% if question.options.exists %}
+                        {% for option in question.options.all %}
+                            <div class="draggable-item mb-2 p-2 border rounded" 
+                                 draggable="true" 
+                                 data-option-id="{{ option.id }}">
+                                {{ forloop.counter }}. {{ option.text }}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback options if not in database -->
+                        {% for letter in "ABCDEF" %}
+                            <div class="draggable-item mb-2 p-2 border rounded" 
+                                 draggable="true" 
+                                 data-option-id="{{ letter }}">
+                                Option {{ letter }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Target container with multiple drop zones -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">Your Answers</div>
+                <div class="card-body p-2 target-container" id="target_{{ question.id }}">
+                    <!-- Generate multiple drop zones for the gaps in the summary -->
+                    {% for i in "12345" %}  <!-- Adjust based on expected number of gaps -->
+                        <div class="mb-3">
+                            <label class="form-label">Gap {{ forloop.counter }}:</label>
+                            <div class="drop-zone p-2 border rounded text-center" 
+                                 data-index="{{ forloop.counter0 }}"
+                                 data-question-id="{{ question.id }}">
+                                Drop your answer here
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden input to store the answer -->
+    <input type="hidden" 
+           id="answer_{{ question.id }}" 
+           class="answer-input" 
+           value="{{ user_answer.answer }}">
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const containerId = 'drag_drop_{{ question.id }}';
+    const container = document.getElementById(containerId);
+    
+    if (!container) return;
+    
+    const sourceContainer = document.getElementById('source_{{ question.id }}');
+    const targetContainer = document.getElementById('target_{{ question.id }}');
+    const dropZones = targetContainer.querySelectorAll('.drop-zone');
+    const hiddenInput = document.getElementById('answer_{{ question.id }}');
+    
+    // Track which items are placed in which positions
+    let placedItems = {};
+    
+    // Initialize with existing answer if any
+    if (hiddenInput.value) {
+        try {
+            // Format should be: index1:optionId1,index2:optionId2,...
+            const savedAnswers = hiddenInput.value.split(',');
+            
+            savedAnswers.forEach(pair => {
+                const [index, optionId] = pair.split(':');
+                if (index !== undefined && optionId !== undefined) {
+                    const dropZone = targetContainer.querySelector(`.drop-zone[data-index="${index}"]`);
+                    const matchingOption = sourceContainer.querySelector(`[data-option-id="${optionId}"]`);
+                    
+                    if (dropZone && matchingOption) {
+                        // Clone the option and place in target
+                        const clone = matchingOption.cloneNode(true);
+                        dropZone.innerHTML = '';
+                        dropZone.appendChild(clone);
+                        dropZone.classList.add('has-item');
+                        
+                        // Hide the original in source
+                        matchingOption.style.display = 'none';
+                        
+                        // Track placement
+                        placedItems[index] = optionId;
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error parsing saved answer', e);
+        }
+    }
+    
+    // Setup drag and drop
+    const draggables = sourceContainer.querySelectorAll('.draggable-item');
+    
+    draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', draggable.dataset.optionId);
+            setTimeout(() => {
+                draggable.classList.add('dragging');
+            }, 0);
+        });
+        
+        draggable.addEventListener('dragend', function() {
+            draggable.classList.remove('dragging');
+        });
+    });
+    
+    // Drop zone event listeners
+    dropZones.forEach(dropZone => {
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', function() {
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const optionId = e.dataTransfer.getData('text/plain');
+            const draggedOption = sourceContainer.querySelector(`[data-option-id="${optionId}"]`);
+            
+            if (draggedOption) {
+                // If there's an existing item, move it back to source
+                if (dropZone.classList.contains('has-item')) {
+                    const existingItem = dropZone.querySelector('.draggable-item');
+                    if (existingItem) {
+                        const existingOptionId = existingItem.dataset.optionId;
+                        const originalOption = sourceContainer.querySelector(`[data-option-id="${existingOptionId}"]`);
+                        if (originalOption) {
+                            originalOption.style.display = 'block';
+                        }
+                        
+                        // Remove from tracked items
+                        const index = dropZone.dataset.index;
+                        if (index !== undefined) {
+                            delete placedItems[index];
+                        }
+                    }
+                }
+                
+                // Clone the new option and place in drop zone
+                const clone = draggedOption.cloneNode(true);
+                dropZone.innerHTML = '';
+                dropZone.appendChild(clone);
+                dropZone.classList.add('has-item');
+                
+                // Hide the original in source
+                draggedOption.style.display = 'none';
+                
+                // Track placement
+                const index = dropZone.dataset.index;
+                if (index !== undefined) {
+                    placedItems[index] = optionId;
+                }
+                
+                // Update hidden input with all placements
+                updateHiddenInput();
+            }
+        });
+        
+        // Double-click to remove
+        dropZone.addEventListener('dblclick', function() {
+            if (dropZone.classList.contains('has-item')) {
+                const existingItem = dropZone.querySelector('.draggable-item');
+                if (existingItem) {
+                    const existingOptionId = existingItem.dataset.optionId;
+                    const originalOption = sourceContainer.querySelector(`[data-option-id="${existingOptionId}"]`);
+                    if (originalOption) {
+                        originalOption.style.display = 'block';
+                    }
+                    
+                    // Clear the drop zone
+                    dropZone.innerHTML = 'Drop your answer here';
+                    dropZone.classList.remove('has-item');
+                    
+                    // Remove from tracked items
+                    const index = dropZone.dataset.index;
+                    if (index !== undefined) {
+                        delete placedItems[index];
+                    }
+                    
+                    // Update hidden input
+                    updateHiddenInput();
+                }
+            }
+        });
+    });
+    
+    // Function to update the hidden input with current placements
+    function updateHiddenInput() {
+        const formattedAnswer = Object.entries(placedItems)
+            .map(([index, optionId]) => `${index}:${optionId}`)
+            .join(',');
+        
+        hiddenInput.value = formattedAnswer;
+        
+        // Trigger save
+        const event = new Event('change');
+        hiddenInput.dispatchEvent(event);
+    }
+    
+    // Add a reset/clear button
+    const resetButton = document.createElement('button');
+    resetButton.textContent = 'Clear All Selections';
+    resetButton.className = 'btn btn-sm btn-outline-secondary mt-3';
+    targetContainer.appendChild(resetButton);
+    
+    resetButton.addEventListener('click', function() {
+        // Clear all drop zones
+        dropZones.forEach(zone => {
+            zone.innerHTML = 'Drop your answer here';
+            zone.classList.remove('has-item');
+        });
+        
+        // Show all options in source
+        draggables.forEach(drag => {
+            drag.style.display = 'block';
+        });
+        
+        // Clear tracked items
+        placedItems = {};
+        
+        // Clear the answer
+        hiddenInput.value = '';
+        
+        // Trigger save
+        const event = new Event('change');
+        hiddenInput.dispatchEvent(event);
+    });
+});
+</script>
+
+<style>
+.draggable-item {
+    cursor: grab;
+    background-color: #f8f9fa;
+    transition: all 0.2s;
+}
+
+.draggable-item:hover {
+    background-color: #e9ecef;
+}
+
+.dragging {
+    opacity: 0.5;
+}
+
+.drop-zone {
+    min-height: 50px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6 !important;
+    transition: all 0.2s;
+}
+
+.drop-zone.drag-over {
+    background-color: #e2f0ff;
+    border-color: #007bff !important;
+}
+
+.drop-zone.has-item {
+    border-style: solid !important;
+    background-color: #e8f4f8;
+}
+
+.source-container {
+    min-height: 200px;
+}
+
+.target-container .mb-3:last-child {
+    margin-bottom: 0 !important;
+}
+</style>

@@ -33,36 +33,54 @@ class QuestionType(models.Model):
         return self.name
 
 class QuestionGroup(models.Model):
-    """Model to group questions based on question types"""
+    """Model to group questions based on question types for a specific passage"""
     title = models.CharField(max_length=200)
     question_type = models.ForeignKey(QuestionType, on_delete=models.CASCADE, related_name='question_groups')
     passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='question_groups')
+    # Add specific instructions for this group (optional, can override type instructions)
+    specific_instructions = models.TextField(blank=True, null=True)
+    # Add order for displaying the groups
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order']
+        # Add a unique constraint to ensure each passage-question_type combination is unique
+        unique_together = ['passage', 'question_type']
     
     def __str__(self):
         return f"{self.title} - {self.question_type.name}"
+    
+    @property
+    def instructions(self):
+        """Return group-specific instructions if available, otherwise return type instructions"""
+        if self.specific_instructions:
+            return self.specific_instructions
+        return self.question_type.instructions
 
 class Question(models.Model):
-    QUESTION_TYPES = (
-        ('multiple_choice', 'Multiple Choice'),
-        ('true_false', 'True/False'),
-        ('true_false_not_given', 'True/False/Not Given'),
-        ('fill_blank', 'Fill in the Blank'),
-        ('short_answer', 'Short Answer'),
-    )
-    
     passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='questions')
-    question_group = models.ForeignKey(QuestionGroup, on_delete=models.CASCADE, related_name='questions', null=True, blank=True)
+    question_group = models.ForeignKey(QuestionGroup, on_delete=models.CASCADE, related_name='questions')
     text = models.TextField()
-    question_type = models.CharField(max_length=30, choices=QUESTION_TYPES)
     correct_answer = models.TextField()
-    # Add order number to show the question's order
+    # Add order number to show the question's order within the group
     order_number = models.IntegerField(default=0)
     
     class Meta:
-        ordering = ['order_number']
+        ordering = ['question_group__order', 'order_number']
     
     def __str__(self):
         return f"Question {self.order_number} for {self.passage.title}"
+    
+    @property
+    def question_type(self):
+        """Return the question type from the question group"""
+        return self.question_group.question_type
+    
+    def save(self, *args, **kwargs):
+        # Ensure the question's passage matches the question group's passage
+        if self.passage != self.question_group.passage:
+            raise ValueError("Question's passage must match question group's passage")
+        super().save(*args, **kwargs)
 
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')

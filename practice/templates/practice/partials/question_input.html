@@ -1,0 +1,35 @@
+{% load template_filters %}
+{% with user_answer=user_answers|get_item:question.id %}
+    {% with question_type=question.question_type %}
+        {% with frontend_type=question_type.frontend_type %}
+            
+            {# Include the appropriate template based on frontend_type #}
+            {% if frontend_type == 'short_text_input' %}
+                {% include "practice/questions/short_text_input.html" %}
+                
+            {% elif frontend_type == 'single_choice_radio' %}
+                {% include "practice/questions/single_choice_radio.html" %}
+                
+            {% elif frontend_type == 'multiple_choice_tickbox' %}
+                {% include "practice/questions/multiple_choice_tickbox.html" %}
+                
+            {% elif frontend_type == 'dropdown_selection' %}
+                {% include "practice/questions/dropdown_selection.html" %}
+                
+            {% elif frontend_type == 'drag_drop_matching' %}
+                {% include "practice/questions/drag_drop_matching.html" %}
+                
+            {% elif frontend_type == 'drag_drop_list' %}
+                {% include "practice/questions/drag_drop_list.html" %}
+                
+            {% else %}
+                {# Fallback to text input if frontend_type is unknown #}
+                <div class="alert alert-warning">
+                    Unknown question type: {{ frontend_type }}
+                </div>
+                {% include "practice/questions/short_text_input.html" %}
+            {% endif %}
+            
+        {% endwith %}
+    {% endwith %}
+{% endwith %}

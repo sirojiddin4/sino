@@ -1,0 +1,98 @@
+{# Template for single choice radio questions #}
+{# Used for: multiple_choice_single, true_false_not_given, yes_no_not_given #}
+
+{% if question_type.code == 'multiple_choice_single' %}
+    {# Multiple choice with options from database #}
+    {% for option in question.options.all %}
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="option_{{ option.id }}" 
+               value="{{ option.id }}" 
+               {% if user_answer.answer == option.id|stringformat:"s" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == option.id|stringformat:"s" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="option_{{ option.id }}">
+            {{ option.text }}
+        </label>
+    </div>
+    {% endfor %}
+    
+{% elif question_type.code == 'true_false_not_given' %}
+    {# True/False/Not Given options #}
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="true_{{ question.id }}" 
+               value="TRUE" 
+               {% if user_answer.answer == "TRUE" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "TRUE" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="true_{{ question.id }}">
+            TRUE
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="false_{{ question.id }}" 
+               value="FALSE" 
+               {% if user_answer.answer == "FALSE" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "FALSE" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="false_{{ question.id }}">
+            FALSE
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="notgiven_{{ question.id }}" 
+               value="NOT GIVEN" 
+               {% if user_answer.answer == "NOT GIVEN" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "NOT GIVEN" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="notgiven_{{ question.id }}">
+            NOT GIVEN
+        </label>
+    </div>
+    
+{% elif question_type.code == 'yes_no_not_given' %}
+    {# Yes/No/Not Given options #}
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="yes_{{ question.id }}" 
+               value="YES" 
+               {% if user_answer.answer == "YES" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "YES" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="yes_{{ question.id }}">
+            YES
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="no_{{ question.id }}" 
+               value="NO" 
+               {% if user_answer.answer == "NO" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "NO" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="no_{{ question.id }}">
+            NO
+        </label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input answer-input" 
+               type="radio" 
+               name="question_{{ question.id }}" 
+               id="notgiven_{{ question.id }}" 
+               value="NOT GIVEN" 
+               {% if user_answer.answer == "NOT GIVEN" %}checked{% endif %}
+               data-previously-checked="{% if user_answer.answer == "NOT GIVEN" %}true{% else %}false{% endif %}">
+        <label class="form-check-label" for="notgiven_{{ question.id }}">
+            NOT GIVEN
+        </label>
+    </div>
+{% endif %}

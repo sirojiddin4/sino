@@ -1,10 +1,31 @@
+<!-- question_input.html -->
 {% load template_filters %}
 {% with user_answer=user_answers|get_item:question.id %}
     {% with question_type=question.question_type %}
         {% with frontend_type=question_type.frontend_type %}
             
-            {# Include the appropriate template based on frontend_type #}
-            {% if frontend_type == 'short_text_input' %}
+            {# Special case for matching paragraph questions with drag_drop_matching type #}
+            {% if frontend_type == 'drag_drop_matching' %}
+                {# Get the question group #}
+                {% with question_group=question.question_group %}
+                    {# Check if there are multiple questions in this group #}
+                    {% with group_questions=question.passage.questions.all|filter_by_group:question_group %}
+                        {% if group_questions.count > 1 %}
+                            {# Check if this is the first question in the group #}
+                            {% if question.order_number == group_questions.first.order_number %}
+                                {# Include the group template with all questions from this group #}
+                                {% include "practice/partials/matching_headings_group.html" with question_list=group_questions user_answers=user_answers %}
+                            {% endif %}
+                            {# Skip rendering for other questions in the group - they're handled in the group template #}
+                        {% else %}
+                            {# If there's only one question in the group, use the standard template #}
+                            {% include "practice/questions/drag_drop_matching.html" %}
+                        {% endif %}
+                    {% endwith %}
+                {% endwith %}
+                
+            {# Standard template inclusion for other question types #}
+            {% elif frontend_type == 'short_text_input' %}
                 {% include "practice/questions/short_text_input.html" %}
                 
             {% elif frontend_type == 'single_choice_radio' %}
@@ -15,9 +36,6 @@
                 
             {% elif frontend_type == 'dropdown_selection' %}
                 {% include "practice/questions/dropdown_selection.html" %}
-                
-            {% elif frontend_type == 'drag_drop_matching' %}
-                {% include "practice/questions/drag_drop_matching.html" %}
                 
             {% elif frontend_type == 'drag_drop_list' %}
                 {% include "practice/questions/drag_drop_list.html" %}

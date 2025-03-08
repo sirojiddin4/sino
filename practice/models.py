@@ -39,6 +39,10 @@ class QuestionGroup(models.Model):
     passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='question_groups')
     # Add specific instructions for this group (optional, can override type instructions)
     specific_instructions = models.TextField(blank=True, null=True)
+    # Add diagram image field for diagram labeling questions
+    diagram_image = models.ImageField(upload_to='diagram_images/', null=True, blank=True)
+    # Add table text for table-based questions (CSV format with placeholders)
+    table_text = models.TextField(blank=True, null=True, help_text="CSV-formatted table data with {{qX}} placeholders for questions")
     # Add order for displaying the groups
     order = models.IntegerField(default=0)
     

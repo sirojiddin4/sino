@@ -1,3 +1,4 @@
+<!-- test.html -->
 {% load static %}
 {% load template_filters %}
 <!DOCTYPE html>
@@ -32,12 +33,6 @@
             font-size: 0.95rem;
         }
         
-        .question-group-specific-instructions {
-            font-size: 0.95rem;
-            font-style: italic;
-            color: #495057;
-        }
-        
         /* Add space between question groups */
         .question-group-container {
             margin-bottom: 30px;
@@ -48,6 +43,62 @@
         /* Last question group doesn't need the border */
         .question-group-container:last-child {
             border-bottom: none;
+        }
+        
+        /* Diagram image container styles - optimized for auto-fitting */
+        .diagram-image-container {
+            margin: 15px 0;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .diagram-image-container img {
+            max-width: 100%;
+            max-height: 300px;
+            width: auto;
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            object-fit: contain;
+        }
+        
+        /* Add image modal styling */
+        .zoomable-image {
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+        
+        .zoomable-image:hover {
+            transform: scale(1.02);
+        }
+        
+        #imageModal .modal-dialog {
+            max-width: 90%;
+            margin: 1.75rem auto;
+        }
+        
+        #imageModal .modal-content {
+            background-color: transparent;
+            border: none;
+        }
+        
+        #imageModal .modal-body {
+            padding: 0;
+            text-align: center;
+        }
+        
+        #imageModal img {
+            max-width: 100%;
+            max-height: 90vh;
+            margin: 0 auto;
+        }
+        
+        /* Table question styles */
+        .table-completion-container {
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -123,40 +174,91 @@
                                                         Questions {{ first_q.order_number }} - {{ last_q.order_number }}
                                                     </h5>
                                                     <div class="question-group-instructions">
-                                                        {{ group.grouper.question_type.instructions|linebreaks }}
+                                                        {{ group.grouper.instructions|linebreaks }}
                                                     </div>
                                                     
-                                                    {% if group.grouper.specific_instructions %}
-                                                    <div class="question-group-specific-instructions">
-                                                        {{ group.grouper.specific_instructions|linebreaks }}
+                                                    <!-- Display diagram image if available -->
+                                                    {% if group.grouper.diagram_image %}
+                                                    <div class="diagram-image-container">
+                                                        <img src="{{ group.grouper.diagram_image.url }}" 
+                                                             alt="Diagram for questions {{ first_q.order_number }} - {{ last_q.order_number }}" 
+                                                             class="img-fluid zoomable-image"
+                                                             data-bs-toggle="modal" 
+                                                             data-bs-target="#imageModal"
+                                                             data-src="{{ group.grouper.diagram_image.url }}"
+                                                             data-group="{{ first_q.order_number }} - {{ last_q.order_number }}">
                                                     </div>
                                                     {% endif %}
                                                 </div>
                                                 
-                                                <!-- Questions in this group -->
-                                                {% for question in question_list %}
-                                                <div class="question-item" 
-                                                     data-question-id="{{ question.id }}" 
-                                                     id="question-item-{{ question.id }}"
-                                                     data-passage-number="{{ p.passage_number }}"
-                                                     data-order-number="{{ question.order_number }}">
-                                                    <div class="question-title">
-                                                        <span>
-                                                            <span class="passage-indicator passage-indicator-{{ p.passage_number }}">{{ p.passage_number }}</span>
-                                                            {{ question.order_number }}. {{ question.text }}
-                                                        </span>
-                                                        <div>
-                                                            {% with user_answer=user_answers|get_item:question.id %}
-                                                            <span class="answered-badge {% if user_answer.answer and user_answer.answer != '' %}visible{% endif %}">Answered</span>
-                                                            <span class="review-badge {% if user_answer.marked_for_review %}visible{% endif %}">Review</span>
-                                                            {% endwith %}
+                                                <!-- Check if this group has special question types -->
+                                                {% with question_type=group.grouper.question_type.frontend_type %}
+                                                {% with question_code=group.grouper.question_type.code %}
+                                                
+                                                {% if question_type == 'drag_drop_matching' %}
+                                                    <!-- For drag_drop_matching, only render the first question -->
+                                                    <div class="question-item" 
+                                                         data-question-id="{{ first_q.id }}" 
+                                                         id="question-item-{{ first_q.id }}"
+                                                         data-passage-number="{{ p.passage_number }}"
+                                                         data-order-number="{{ first_q.order_number }}">
+                                                        <div class="question-title">
+                                                            <span>
+                                                                <span class="passage-indicator passage-indicator-{{ p.passage_number }}">{{ p.passage_number }}</span>
+                                                                {{ first_q.order_number }} - {{ last_q.order_number }}. Match the headings
+                                                            </span>
+                                                            <div>
+                                                                {% with user_answer=user_answers|get_item:first_q.id %}
+                                                                <span class="answered-badge {% if user_answer.answer and user_answer.answer != '' %}visible{% endif %}">Answered</span>
+                                                                <span class="review-badge {% if user_answer.marked_for_review %}visible{% endif %}">Review</span>
+                                                                {% endwith %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="question-container" data-question-id="{{ first_q.id }}" id="question-{{ first_q.id }}">
+                                                            {% include "practice/partials/question_input.html" with question=first_q user_answers=user_answers %}
                                                         </div>
                                                     </div>
-                                                    <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
-                                                        {% include "practice/partials/question_input.html" with question=question user_answers=user_answers %}
+                                                {% elif question_code == 'table_completion' %}
+                                                    <!-- For table completion, use the table template -->
+                                                    <div class="question-item-group">
+                                                        <div class="table-question-title">
+                                                            <span>
+                                                                <span class="passage-indicator passage-indicator-{{ p.passage_number }}">{{ p.passage_number }}</span>
+                                                            </span>
+                                                        </div>
+                                                        <div class="table-question-container">
+                                                            {% include "practice/questions/table_completion.html" with question_list=question_list user_answers=user_answers %}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                {% endfor %}
+                                                {% else %}
+                                                    <!-- For all other question types, render all questions in the group -->
+                                                    {% for question in question_list %}
+                                                    <div class="question-item" 
+                                                         data-question-id="{{ question.id }}" 
+                                                         id="question-item-{{ question.id }}"
+                                                         data-passage-number="{{ p.passage_number }}"
+                                                         data-order-number="{{ question.order_number }}">
+                                                        <div class="question-title">
+                                                            <span>
+                                                                <span class="passage-indicator passage-indicator-{{ p.passage_number }}">{{ p.passage_number }}</span>
+                                                                {{ question.order_number }}. {{ question.text }}
+                                                            </span>
+                                                            <div>
+                                                                {% with user_answer=user_answers|get_item:question.id %}
+                                                                <span class="answered-badge {% if user_answer.answer and user_answer.answer != '' %}visible{% endif %}">Answered</span>
+                                                                <span class="review-badge {% if user_answer.marked_for_review %}visible{% endif %}">Review</span>
+                                                                {% endwith %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="question-container" data-question-id="{{ question.id }}" id="question-{{ question.id }}">
+                                                            {% include "practice/partials/question_input.html" with question=question user_answers=user_answers %}
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                
+                                                {% endwith %}
+                                                {% endwith %}
                                             </div>
                                             {% endwith %}
                                             {% endwith %}
@@ -235,11 +337,51 @@
             </div>
         </div>
         
+        <!-- Image Modal for zooming -->
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="imageModalLabel">Diagram for Questions</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <img src="" id="modalImage" class="img-fluid" alt="Enlarged diagram">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
     <script src="{% static 'js/test.js' %}"></script>
     <script src="{% static 'js/highlight.js' %}"></script>
+    
+    <!-- Image Modal Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup image modal
+            const imageModal = document.getElementById('imageModal');
+            if (imageModal) {
+                imageModal.addEventListener('show.bs.modal', function (event) {
+                    // Button that triggered the modal
+                    const image = event.relatedTarget;
+                    
+                    // Extract info from data-* attributes
+                    const src = image.getAttribute('data-src');
+                    const group = image.getAttribute('data-group');
+                    
+                    // Update the modal's content
+                    const modalTitle = imageModal.querySelector('.modal-title');
+                    const modalImage = imageModal.querySelector('#modalImage');
+                    
+                    modalTitle.textContent = 'Diagram for Questions ' + group;
+                    modalImage.src = src;
+                });
+            }
+        });
+    </script>
 </body>
 </html>

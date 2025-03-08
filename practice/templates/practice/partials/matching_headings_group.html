@@ -1,13 +1,14 @@
+<!-- matching_headings_group.html -->
 {# Template for drag and drop matching questions for multiple questions #}
-{# Used for: matching_headings for questions 4-9 #}
+{# Used for: matching_headings for any group of paragraph matching questions #}
 
 {% load template_filters %}
 
 <div class="drag-drop-matching-container" id="drag_drop_multiple_{{ question_list.0.id }}">
-    <div class="row">
+    <div class="row equal-height-row">
         <!-- Source container with draggable options -->
         <div class="col-md-6">
-            <div class="card mb-3">
+            <div class="card mb-3 h-100">
                 <div class="card-header bg-primary text-white">Available Headings</div>
                 <div class="card-body p-2 source-container" id="source_multiple_{{ question_list.0.id }}">
                     {% if question_list.0.options.exists %}
@@ -34,12 +35,13 @@
         
         <!-- Target container to drop answers for multiple questions -->
         <div class="col-md-6">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header bg-success text-white">Your Answers</div>
                 <div class="card-body p-2 target-multiple-container" id="target_multiple_{{ question_list.0.id }}">
                     {% for question in question_list %}
+                        {% with user_answer=user_answers|get_item:question.id %}
                         <div class="mb-3">
-                            <label class="form-label">{{ question.order_number }}. {{ question.text }}</label>
+                            <label class="form-label">{{ question.text }}</label>
                             <div class="drop-zone p-2 border rounded text-center" 
                                 data-question-id="{{ question.id }}">
                                 Drop your answer here
@@ -48,8 +50,9 @@
                             <input type="hidden" 
                                 id="answer_{{ question.id }}" 
                                 class="answer-input" 
-                                value="{{ user_answers|get_item:question.id|get_attr:'answer' }}">
+                                value="{{ user_answer.answer|default:'' }}">
                         </div>
+                        {% endwith %}
                     {% endfor %}
                 </div>
             </div>
@@ -211,6 +214,34 @@ document.addEventListener('DOMContentLoaded', function() {
             delete drag.dataset.assignedTo;
         });
     });
+    
+    // Function to equalize heights - runs on load and resize
+    function equalizeHeights() {
+        // Reset heights first
+        sourceContainer.style.height = 'auto';
+        targetContainer.style.height = 'auto';
+        
+        // Wait for DOM to update
+        setTimeout(() => {
+            // Get the heights
+            const sourceHeight = sourceContainer.scrollHeight;
+            const targetHeight = targetContainer.scrollHeight;
+            
+            // Find the taller one
+            const maxHeight = Math.max(sourceHeight, targetHeight);
+            
+            // Set both to the same height (minimum 300px)
+            const finalHeight = Math.max(maxHeight, 300);
+            sourceContainer.style.height = finalHeight + 'px';
+            targetContainer.style.height = finalHeight + 'px';
+        }, 0);
+    }
+    
+    // Run on load
+    equalizeHeights();
+    
+    // Run on window resize
+    window.addEventListener('resize', equalizeHeights);
 });
 </script>
 
@@ -246,13 +277,25 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: #e8f4f8;
 }
 
-.source-container {
-    min-height: 200px;
+/* Equal height styling */
+.equal-height-row {
+    display: flex;
+    flex-wrap: wrap;
 }
 
-.target-multiple-container {
-    min-height: 200px;
-    max-height: 400px;
+.source-container, .target-multiple-container {
+    min-height: 300px;
+    max-height: none;
     overflow-y: auto;
+    height: 100%;
+}
+
+.drag-drop-matching-container .card {
+    display: flex;
+    flex-direction: column;
+}
+
+.drag-drop-matching-container .card-body {
+    flex: 1;
 }
 </style>

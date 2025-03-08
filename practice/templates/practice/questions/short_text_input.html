@@ -9,10 +9,6 @@
            value="{{ user_answer.answer }}"
            data-question-id="{{ question.id }}"
            data-question-type="{{ question_type.code }}">
-    
-    {% if question_type.code == 'flowchart_completion' or question_type.code == 'diagram_label' %}
-        <small class="form-text text-muted mt-1">Enter a single word or short phrase</small>
-    {% endif %}
 </div>
 
 {# Initialize input behavior #}

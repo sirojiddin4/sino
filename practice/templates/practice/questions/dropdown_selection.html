@@ -3,9 +3,10 @@
 
 <div class="dropdown-selection-container">
     <div class="form-group">
-        <select class="form-select answer-input" 
+        <select class="form-select answer-input sentence-completion-dropdown" 
                 id="dropdown_{{ question.id }}"
-                data-question-id="{{ question.id }}">
+                data-question-id="{{ question.id }}"
+                data-question-group="{{ question.question_group.id }}">
             <option value="" {% if not user_answer.answer %}selected{% endif %}>Select your answer</option>
             
             {% if question_type.code == 'identifying_info' %}
@@ -28,18 +29,20 @@
                     {% endif %}
                 {% endfor %}
                 
-            {% elif question_type.code == 'matching_sentence_endings' %}
+            {% elif question_type.code == 'matching_sentence_endings' or question_type.code == 'sentence_completion' %}
                 {# Use the actual options if provided, otherwise use placeholders #}
                 {% if question.options.exists %}
                     {% for option in question.options.all %}
-                    <option value="{{ option.id }}" {% if user_answer.answer == option.id|stringformat:"s" %}selected{% endif %}>
+                    <option value="{{ option.id }}" 
+                            {% if user_answer.answer == option.id|stringformat:"s" %}selected{% endif %}>
                         {{ option.text }}
                     </option>
                     {% endfor %}
                 {% else %}
                     {# Fallback options if not in database #}
                     {% for letter in "ABCDEFG" %}
-                    <option value="{{ letter }}" {% if user_answer.answer == letter %}selected{% endif %}>
+                    <option value="{{ letter }}" 
+                            {% if user_answer.answer == letter %}selected{% endif %}>
                         Ending {{ letter }}
                     </option>
                     {% endfor %}
@@ -48,6 +51,99 @@
         </select>
     </div>
 </div>
+
+{% if question_type.code == 'matching_sentence_endings' or question_type.code == 'sentence_completion' %}
+<script>
+// Add a global initialization function for sentence completion dropdowns
+function initializeSentenceCompletionDropdowns() {
+    // Find all sentence completion dropdowns in the document
+    const allDropdowns = document.querySelectorAll('.sentence-completion-dropdown');
+    
+    // Group dropdowns by question group
+    const dropdownsByGroup = {};
+    allDropdowns.forEach(dropdown => {
+        const groupId = dropdown.getAttribute('data-question-group');
+        if (!dropdownsByGroup[groupId]) {
+            dropdownsByGroup[groupId] = [];
+        }
+        dropdownsByGroup[groupId].push(dropdown);
+    });
+    
+    // For each group, update disabled options
+    Object.values(dropdownsByGroup).forEach(groupDropdowns => {
+        updateDisabledOptions(groupDropdowns);
+        
+        // Add change listeners to each dropdown in the group
+        groupDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('change', function() {
+                // Update all dropdowns in this group
+                updateDisabledOptions(groupDropdowns);
+            });
+        });
+    });
+}
+
+// Function to disable options that are selected in other dropdowns
+function updateDisabledOptions(dropdowns) {
+    // First collect all selected values with their corresponding dropdown IDs
+    const selectedValues = {};
+    dropdowns.forEach(dropdown => {
+        if (dropdown.value) {
+            selectedValues[dropdown.value] = dropdown.id;
+        }
+    });
+    
+    // Then update each dropdown
+    dropdowns.forEach(dropdown => {
+        Array.from(dropdown.options).forEach(option => {
+            // Skip the empty/default option
+            if (!option.value) return;
+            
+            const optionValue = option.value;
+            
+            // If this option is selected in this dropdown, keep it enabled
+            if (dropdown.value === optionValue) {
+                option.disabled = false;
+            } 
+            // If this option is selected in another dropdown, disable it
+            else if (selectedValues[optionValue] && selectedValues[optionValue] !== dropdown.id) {
+                option.disabled = true;
+            } 
+            // Otherwise, enable it
+            else {
+                option.disabled = false;
+            }
+        });
+    });
+}
+
+// Run the initialization once the page is fully loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSentenceCompletionDropdowns();
+    
+    // Add event listener for question navigation
+    const questionNavBtns = document.querySelectorAll('.question-nav-btn');
+    if (questionNavBtns.length > 0) {
+        questionNavBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Re-initialize dropdowns after a short delay to ensure the DOM is updated
+                setTimeout(initializeSentenceCompletionDropdowns, 100);
+            });
+        });
+    }
+    
+    // Also listen for Next/Prev button clicks
+    const prevNextBtns = document.querySelectorAll('#prevBtn, #nextBtn');
+    if (prevNextBtns.length > 0) {
+        prevNextBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                setTimeout(initializeSentenceCompletionDropdowns, 100);
+            });
+        });
+    }
+});
+</script>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,91 @@
+{# Template for table completion questions #}
+{# Used for displaying table questions from CSV format with embedded input fields #}
+
+{% load template_filters %}
+
+<div class="table-completion-container">
+    {% if question_list and question_list.0.question_group.table_text %}
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                {% with table_data=question_list.0.question_group.table_text|parse_csv_table %}
+                    {% for row in table_data %}
+                        <tr>
+                            {% for cell in row %}
+                                {% if cell|contains_question_placeholder %}
+                                    {% with question_num=cell|extract_question_number %}
+                                        {% with current_question=question_list|get_question_by_order:question_num %}
+                                            {% if current_question %}
+                                                {% with user_answer=user_answers|get_item:current_question.id %}
+                                                <td class="table-question-cell">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" 
+                                                            class="form-control answer-input" 
+                                                            id="answer_{{ current_question.id }}" 
+                                                            placeholder="Enter answer..." 
+                                                            value="{{ user_answer.answer }}"
+                                                            data-question-id="{{ current_question.id }}"
+                                                            data-question-type="{{ current_question.question_type.code }}">
+                                                    </div>
+                                                </td>
+                                                {% endwith %}
+                                            {% else %}
+                                                <td>{{ cell }}</td>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endwith %}
+                                {% else %}
+                                    <td>{{ cell }}</td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                {% endwith %}
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            No table data available for this question group.
+        </div>
+    {% endif %}
+</div>
+
+{# Initialize input behavior #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tableInputs = document.querySelectorAll('.table-completion-container .answer-input');
+    
+    tableInputs.forEach(function(input) {
+        // Auto-save on input change (debounced)
+        let timeout;
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                // This will trigger the global answer-input event handler in test.js
+                const event = new Event('change');
+                input.dispatchEvent(event);
+            }, 500); // 500ms debounce
+        });
+    });
+});
+</script>
+
+<style>
+.table-completion-container table {
+    margin-bottom: 1rem;
+    background-color: #fff;
+}
+
+.table-question-cell {
+    background-color: #f8f9fa;
+    min-width: 150px;
+}
+
+.table-completion-container th {
+    background-color: #f0f0f0;
+    font-weight: 600;
+}
+
+.table-completion-container .input-group-sm {
+    width: 100%;
+}
+</style>

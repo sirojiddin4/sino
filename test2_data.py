@@ -428,13 +428,15 @@ Urban agriculture initiatives are gaining momentum, transforming vacant lots, ro
         print(f"Created {len(tc_questions)} table completion questions")
     
     # 6. Matching sentence endings (24-27)
+    # Note: This is a sentence completion–style type.
     if 'matching_sentence_endings' in question_types:
         mse_group = QuestionGroup.objects.create(
             title="Matching Sentence Endings - Passage 2",
             question_type=question_types['matching_sentence_endings'],
             passage=passage2,
             specific_instructions="Complete each sentence with the correct ending, A–G below.",
-            order=3
+            order=3,
+            unique_options_only=True  # Ensure that this group enforces unique selections.
         )
         
         # Create sentence endings first

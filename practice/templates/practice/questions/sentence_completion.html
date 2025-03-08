@@ -1,0 +1,113 @@
+{# Template for matching_sentence_endings and sentence_completion #}
+
+<div class="dropdown-selection-container">
+    <div class="form-group">
+        <select class="form-select answer-input sentence-completion-dropdown" 
+                id="dropdown_{{ question.id }}"
+                data-question-id="{{ question.id }}"
+                data-question-group="{{ question.question_group.id }}">
+            <option value="" {% if not user_answer.answer %}selected{% endif %}>Select your answer</option>
+            
+            {% if question.options.exists %}
+                {% for option in question.options.all %}
+                <option value="{{ option.id }}" 
+                        {% if user_answer.answer == option.id|stringformat:"s" %}selected{% endif %}>
+                    {{ option.text }}
+                </option>
+                {% endfor %}
+            {% else %}
+                {# Fallback options if not in database #}
+                {% for letter in "ABCDEFG" %}
+                <option value="{{ letter }}" 
+                        {% if user_answer.answer == letter %}selected{% endif %}>
+                    Ending {{ letter }}
+                </option>
+                {% endfor %}
+            {% endif %}
+        </select>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Identify this specific dropdown
+    const dropdown = document.getElementById('dropdown_{{ question.id }}');
+    if (!dropdown) return;
+    
+    console.log("Initializing dropdown", dropdown.id, "for question", {{ question.id }});
+    
+    // Add basic change event listener to save the answer
+    dropdown.addEventListener('change', function() {
+        console.log("Dropdown change for", dropdown.id, "value:", dropdown.value);
+        
+        // The original save mechanism from your application
+        const event = new Event('change');
+        dropdown.dispatchEvent(event);
+        
+        // After saving, update other dropdowns in this group with a delay
+        setTimeout(function() {
+            updateGroupOptions(dropdown);
+        }, 50);
+    });
+    
+    // When the page loads, update all dropdowns in this group
+    updateGroupOptions(dropdown);
+    
+    // Function to update other dropdowns in the same group
+    function updateGroupOptions(currentDropdown) {
+        const groupId = currentDropdown.getAttribute('data-question-group');
+        if (!groupId) return;
+        
+        // Find all dropdowns in this group
+        const groupDropdowns = document.querySelectorAll(`.sentence-completion-dropdown[data-question-group="${groupId}"]`);
+        console.log("Updating", groupDropdowns.length, "dropdowns in group", groupId);
+        
+        // Collect all selected values
+        const selectedValues = {};
+        groupDropdowns.forEach(dropdown => {
+            if (dropdown.value) {
+                selectedValues[dropdown.value] = dropdown.id;
+                console.log("Dropdown", dropdown.id, "has selected value:", dropdown.value);
+            }
+        });
+        
+        // Update each dropdown in the group
+        groupDropdowns.forEach(dropdown => {
+            Array.from(dropdown.options).forEach(option => {
+                // Skip the empty "Select your answer" option
+                if (!option.value) return;
+                
+                const optionValue = option.value;
+                
+                // If this option is selected in this dropdown, enable it
+                if (dropdown.value === optionValue) {
+                    option.disabled = false;
+                    console.log("Option", optionValue, "in dropdown", dropdown.id, "is selected (enabled)");
+                } 
+                // If this option is selected in another dropdown, disable it
+                else if (selectedValues[optionValue] && selectedValues[optionValue] !== dropdown.id) {
+                    option.disabled = true;
+                    console.log("Disabling option", optionValue, "in dropdown", dropdown.id, 
+                              "because it's selected in dropdown", selectedValues[optionValue]);
+                } 
+                // Otherwise enable it
+                else {
+                    option.disabled = false;
+                    console.log("Enabling option", optionValue, "in dropdown", dropdown.id);
+                }
+            });
+        });
+    }
+    
+    // Add event listeners to all navigation buttons
+    const navButtons = document.querySelectorAll('.question-nav-btn, #prevBtn, #nextBtn');
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Wait for DOM to update after navigation
+            setTimeout(function() {
+                updateGroupOptions(dropdown);
+            }, 200);
+        });
+    });
+});
+</script>

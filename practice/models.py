@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models 
 from django.contrib.auth.models import User
 
 class Test(models.Model):
@@ -45,10 +45,12 @@ class QuestionGroup(models.Model):
     table_text = models.TextField(blank=True, null=True, help_text="CSV-formatted table data with {{qX}} placeholders for questions")
     # Add order for displaying the groups
     order = models.IntegerField(default=0)
+    # Flag to indicate if each option can be chosen only once (for matching or sentence completion questions)
+    unique_options_only = models.BooleanField(default=False, help_text="If True, each option can be chosen only once in this question group")
     
     class Meta:
         ordering = ['order']
-        # Add a unique constraint to ensure each passage-question_type combination is unique
+        # Ensure that for a given passage and question type there is only one group.
         unique_together = ['passage', 'question_type']
     
     def __str__(self):
@@ -61,12 +63,18 @@ class QuestionGroup(models.Model):
             return self.specific_instructions
         return self.question_type.instructions
 
+    def save(self, *args, **kwargs):
+        # For sentence completion–style questions, always force unique options so that the JS can block duplicates.
+        if self.question_type.code in ['matching_sentence_endings', 'sentence_completion']:
+            self.unique_options_only = True
+        super().save(*args, **kwargs)
+
 class Question(models.Model):
     passage = models.ForeignKey(ReadingPassage, on_delete=models.CASCADE, related_name='questions')
     question_group = models.ForeignKey(QuestionGroup, on_delete=models.CASCADE, related_name='questions')
     text = models.TextField()
     correct_answer = models.TextField()
-    # Add order number to show the question's order within the group
+    # Order number to show the question's order within the group
     order_number = models.IntegerField(default=0)
     
     class Meta:

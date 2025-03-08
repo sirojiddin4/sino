@@ -35,7 +35,13 @@
                 {% include "practice/questions/multiple_choice_tickbox.html" %}
                 
             {% elif frontend_type == 'dropdown_selection' %}
-                {% include "practice/questions/dropdown_selection.html" %}
+                {% if question_type.code == 'matching_features' or question_type.code == 'matching_info' %}
+                    {% include "practice/questions/matching_info.html" %}
+                {% elif question_type.code == 'matching_sentence_endings' or question_type.code == 'sentence_completion' %}
+                    {% include "practice/questions/sentence_completion.html" %}
+                {% else %}
+                    {% include "practice/questions/dropdown_selection.html" %}
+                {% endif %}
                 
             {% elif frontend_type == 'drag_drop_list' %}
                 {% include "practice/questions/drag_drop_list.html" %}

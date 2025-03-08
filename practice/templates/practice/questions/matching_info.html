@@ -1,33 +1,32 @@
-{# Template for dropdown selection questions #}
-{# Used for: identifying_info #}
+{# Template for matching information questions #}
+{# Used for: matching_features, matching_info #}
 
-<div class="dropdown-selection-container">
+<div class="matching-info-container">
     <div class="form-group">
-        <select class="form-select answer-input" 
+        <select class="form-select answer-input matching-info-dropdown" 
                 id="dropdown_{{ question.id }}"
                 data-question-id="{{ question.id }}"
                 data-question-group="{{ question.question_group.id }}"
                 data-unique-options="{{ question.question_group.unique_options_only|yesno:'true,false' }}">
             <option value="" {% if not user_answer.answer %}selected{% endif %}>Select your answer</option>
             
-            {% if question_type.code == 'identifying_info' %}
-                {# Paragraph options (A, B, C, etc.) #}
-                {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
-                    {% if forloop.counter <= 10 %}  {# Limit to a reasonable number of paragraphs #}
-                    <option value="{{ letter }}" {% if user_answer.answer == letter %}selected{% endif %}>
-                        Paragraph {{ letter }}
-                    </option>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
+            {# Options typically labeled A, B, C, etc. #}
+            {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+                {% if forloop.counter <= 6 %}  {# Typically limited to fewer options #}
+                <option value="{{ letter }}" 
+                        {% if user_answer.answer == letter %}selected{% endif %}>
+                    {{ letter }}
+                </option>
+                {% endif %}
+            {% endfor %}
         </select>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize all general dropdown selections with unique options check
-    initializeDropdowns();
+    // Initialize all matching info dropdowns
+    initializeMatchingInfoDropdowns();
     
     const dropdown = document.getElementById('dropdown_{{ question.id }}');
     
@@ -39,13 +38,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add event listener for question navigation
+    // Add event listener for question navigation to reinitialize dropdowns
     const questionNavBtns = document.querySelectorAll('.question-nav-btn');
     if (questionNavBtns.length > 0) {
         questionNavBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 // Re-initialize dropdowns after a short delay to ensure the DOM is updated
-                setTimeout(initializeDropdowns, 100);
+                setTimeout(initializeMatchingInfoDropdowns, 100);
             });
         });
     }
@@ -55,16 +54,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (prevNextBtns.length > 0) {
         prevNextBtns.forEach(btn => {
             btn.addEventListener('click', function() {
-                setTimeout(initializeDropdowns, 100);
+                setTimeout(initializeMatchingInfoDropdowns, 100);
             });
         });
     }
 });
 
-// Function to initialize all dropdowns
-function initializeDropdowns() {
-    // Find all dropdown selects that have the data-unique-options attribute
-    const allDropdowns = document.querySelectorAll('select[data-unique-options]');
+// Function to initialize all matching info dropdowns
+function initializeMatchingInfoDropdowns() {
+    // Find all matching info dropdowns in the document
+    const allDropdowns = document.querySelectorAll('.matching-info-dropdown');
     
     // Group dropdowns by question group
     const dropdownsByGroup = {};

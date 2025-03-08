@@ -1,0 +1,34 @@
+{# Template for diagram labeling questions #}
+{# Used for: diagram label questions with images #}
+
+<div class="diagram-labeling-container">
+    <div class="form-group">
+        <input type="text"
+               class="form-control answer-input"
+               id="answer_{{ question.id }}"
+               placeholder="Enter your answer here..."
+               value="{{ user_answer.answer }}"
+               data-question-id="{{ question.id }}"
+               data-question-type="{{ question_type.code }}">
+    </div>
+</div>
+
+{# Initialize input behavior #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('answer_{{ question.id }}');
+    
+    if (input) {
+        // Auto-save on input change (debounced)
+        let timeout;
+        input.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                // This will trigger the global answer-input event handler in test.js
+                const event = new Event('change');
+                input.dispatchEvent(event);
+            }, 500); // 500ms debounce
+        });
+    }
+});
+</script>

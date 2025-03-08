@@ -1,0 +1,44 @@
+{# Template for question group header #}
+{# Used for displaying instructions and information about a group of questions #}
+
+<div class="question-group-header">
+    <h5 class="question-group-title">
+        Questions {{ first_q.order_number }} - {{ last_q.order_number }}
+    </h5>
+    <div class="question-group-instructions">
+        {{ group.grouper.instructions|linebreaks }}
+    </div>
+    
+    <!-- Display diagram image if available -->
+    {% if group.grouper.diagram_image %}
+    <div class="diagram-image-container">
+        <img src="{{ group.grouper.diagram_image.url }}" 
+             alt="Diagram for questions {{ first_q.order_number }} - {{ last_q.order_number }}" 
+             class="img-fluid zoomable-image"
+             data-bs-toggle="modal" 
+             data-bs-target="#imageModal"
+             data-src="{{ group.grouper.diagram_image.url }}"
+             data-group="{{ first_q.order_number }} - {{ last_q.order_number }}">
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.question-group-header {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 4px solid #0d6efd;
+    margin-bottom: 20px;
+}
+
+.question-group-title {
+    font-weight: 600;
+    color: #0d6efd;
+    margin-bottom: 10px;
+}
+
+.question-group-instructions {
+    font-size: 0.95rem;
+}
+</style>
